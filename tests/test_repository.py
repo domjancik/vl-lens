@@ -93,6 +93,33 @@ class RepositoryTests(unittest.TestCase):
         self.assertEqual(menu['commits'][0]['oid'], self.commit)
         self.assertTrue(any(ref['name'] == 'HEAD' for ref in menu['refs']))
 
+    def test_generic_files_include_text_binary_and_tracked_dotfiles(self):
+        self.assertTrue(hasattr(self.repo,'read_file'),'Generic Git snapshots are missing')
+        (self.root/'README.md').write_text('before\n')
+        (self.root/'.github').mkdir();(self.root/'.github/config.yml').write_text('enabled: true\n')
+        (self.root/'.gitignore').write_text('.env\n')
+        self.git('add','.');self.git('commit','-qm','Add other files')
+        (self.root/'README.md').write_text('after\n')
+        (self.root/'image.bin').write_bytes(b'\x00\xffbytes')
+        (self.root/'.env').write_text('SECRET=not-readable')
+        changes={c['path']:c for c in self.repo.changes()}
+        self.assertEqual(changes['README.md']['status'],'modified')
+        self.assertEqual(changes['image.bin']['status'],'added')
+        self.assertNotIn('.env',changes)
+        self.assertIn('.github/config.yml',self.repo.files('HEAD'))
+        self.assertEqual(self.repo.read_file('HEAD','README.md')['source'],'before\n')
+        self.assertEqual(self.repo.read_file('WORKTREE','image.bin')['kind'],'binary')
+        with self.assertRaises(ValueError):self.repo.read_file('WORKTREE','.env')
+        self.assertEqual(self.repo.documents('HEAD'),[self.path])
+
+    def test_uninitialized_submodule_retains_its_pointer_in_worktree(self):
+        (self.root/'Submodule').mkdir()
+        self.git('update-index','--add','--cacheinfo','160000',self.commit,'Submodule')
+        self.assertIn('Submodule',self.repo.files('WORKTREE'))
+        result=self.repo.read_file('WORKTREE','Submodule')
+        self.assertEqual(result['kind'],'submodule')
+        self.assertEqual(result['oid'],self.commit)
+
     def test_history_keeps_merge_parents_branch_labels_and_pinned_pagination(self):
         self.assertTrue(hasattr(self.repo, 'history'), 'Visual Git history provider is missing')
         self.git('branch', '-M', 'main')

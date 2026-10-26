@@ -59,6 +59,18 @@ Local **All branches** reads the currently available local/remote refs without f
 
 Range shading uses the loaded commit ancestry. It labels forward, reverse, cross-branch and incomplete ancestry separately. Applying a range compares the two exact snapshots, so divergent branches are not silently replaced by their merge base. The graph never claims unloaded ancestors are present.
 
+## Other file types in Git diffs
+
+Git comparisons list all repository files, including source code, Markdown, JSON/YAML, dotfiles, images and other assets. Use **Filter changed files** or the file picker to find a path.
+
+- VL files retain the visual graph diff.
+- Text files use a full-width unified diff with old/new line numbers, addition/removal counts, Before/After source views and optional line wrapping. HTML and SVG are displayed as inert text.
+- Binary files show side-by-side sizes and content/object identities. File content is not executed or decoded as an image preview.
+- Added, deleted and renamed files preserve their missing-side and original-path information. Symbolic link targets are shown without following the link; submodules show their Git object pointers.
+- Local worktree reads are limited to Git-listed, non-ignored files inside the selected project. Git metadata and paths that escape the project remain blocked. No general-purpose filesystem read endpoint is exposed.
+
+Text previews are capped at 128,000 characters per file and 6,000 diff/source rows, with explicit partial-preview notices. GitHub files above 3 MiB and local files above 12 MiB retain metadata rather than failing the file browser. Non-Unicode text may be reported as binary. Normal file/folder imports outside Git mode remain VL-only.
+
 ## Git diff
 
 **Git diff** compares two saved snapshots using DocumentId and element IDs. Added, removed and changed nodes/pins/links are highlighted. Before/After, Show removals, Ignore Bounds and a unified XML diff support review.

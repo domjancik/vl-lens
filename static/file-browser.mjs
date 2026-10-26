@@ -44,7 +44,7 @@ export function createFileBrowser({getProject,getOpened,getWorkspace,getCurrent,
     const current=getCurrent()?.path===file.path;
     const row=action('',()=>choose(file),`${quick?'quick-file':'file-row'}${current?' current':''}${quick&&index===selected?' active':''}`);
     row.title=displayPath(file);row.disabled=Boolean(file.unavailable);
-    row.append(el('span','file-glyph','VL'));
+    row.append(el('span','file-glyph',file.path.split('.').at(-1).slice(0,4).toUpperCase()));
     const label=el('span','file-row-label');label.append(el('span','file-name',fileName(file)));
     if(showPath||quick){const folder=displayPath(file).split('/').slice(0,-1).join('/');label.append(el('small','file-location',folder||'Project root'));}
     row.append(label);const status=badge(file);if(status)row.append(el('span',`file-badge ${getStatus(file.path)||''}`,status));
@@ -64,7 +64,7 @@ export function createFileBrowser({getProject,getOpened,getWorkspace,getCurrent,
       if(matches.length===200&&files.length>200)container.append(el('p','file-empty','First 200 matches shown. Add another word to narrow the search.'));
       return;
     }
-    if(!files.length){container.append(el('p','file-empty',source==='opened'?'Open files or a local folder to add patches to this session.':'No .vl files found in this project. Open a local folder or refresh the project.'));return;}
+    if(!files.length){container.append(el('p','file-empty',source==='opened'?'Open files or a local folder to add patches to this session.':'No files found in this source. Open a local folder or choose another Git range.'));return;}
     let rows=0;
     function folder(node,depth){
       for(const child of node.children){

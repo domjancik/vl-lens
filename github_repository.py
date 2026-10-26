@@ -1,4 +1,5 @@
 """Read-only public GitHub snapshots. No checkout, arbitrary URLs or user tokens."""
+from filetypes import validate_git_path,describe_file
 import base64
 from collections import OrderedDict
 import json
@@ -119,16 +120,19 @@ class GitHubRepository:
             if data.get('truncated'):
                 raise ValueError('Repository tree is too large or incomplete. Use a local clone in the desktop viewer.')
             self._trees[sha] = {item['path']: item for item in data['tree']
-                                if item['type'] == 'blob' and item.get('mode') in ('100644', '100755')
-                                and item['path'].lower().endswith('.vl')}
+                                if item['type'] in ('blob','commit') and item.get('mode') in ('100644','100755','120000','160000')}
         return self._trees[sha]
 
     def documents(self, revision):
+        return sorted(p for p,item in self.tree(revision).items() if p.lower().endswith('.vl') and item.get('mode') in ('100644','100755'))
+
+    def files(self,revision):
         return sorted(self.tree(revision))
 
     def catalog(self, revision):
+        allowed=set(self.documents(revision))
         return [{'path': path, 'name': PurePosixPath(path).name, 'bytes': item.get('size', 0)}
-                for path, item in sorted(self.tree(revision).items())]
+                for path, item in sorted(self.tree(revision).items()) if path in allowed]
 
     def describe(self, revision):
         resolved = self.resolve(revision)
@@ -153,26 +157,26 @@ class GitHubRepository:
                              'date': item['commit']['committer']['date']} for item in commits]}
 
     def read(self, revision, path):
-        parts = PurePosixPath(path)
-        if not path or len(path) > 1024 or '\\' in path or '\x00' in path or parts.is_absolute() or '..' in parts.parts or ':' in path or parts.suffix.lower() != '.vl':
-            raise ValueError('Choose a repository-relative VL file.')
-        resolved = self.resolve(revision)
-        item = self.tree(resolved['id']).get(path)
-        if item is None:
-            return None
-        if item.get('size', 0) > MAX_SOURCE_BYTES:
-            raise ValueError('Hosted VL files are limited to 3 MB. Use the desktop viewer for larger files.')
-        blob = self.fetch(self.prefix + '/git/blobs/' + item['sha'])
-        if blob.get('size', 0) > MAX_SOURCE_BYTES or blob.get('encoding') != 'base64':
-            raise ValueError('The hosted file is too large or uses an unsupported encoding.')
-        try:
-            content = base64.b64decode(blob['content'])
-            if len(content) > MAX_SOURCE_BYTES:
-                raise ValueError('Hosted VL files are limited to 3 MB.')
-            source = content.decode('utf-8-sig')
-        except (UnicodeError, KeyError):
-            raise ValueError('The file is not a UTF-8 VL document.') from None
-        return {'path': path, 'source': source, 'revision': resolved}
+        result=self.read_file(revision,path)
+        if result is None:return None
+        if 'source' not in result:raise ValueError('File is binary or exceeds the hosted source limit.')
+        return result
+
+    def read_file(self,revision,path):
+        validate_git_path(path)
+        resolved=self.resolve(revision)
+        item=self.tree(resolved['id']).get(path)
+        if item is None:return None
+        metadata={'path':path,'revision':resolved,'oid':item['sha'],'bytes':item.get('size',0)}
+        if item.get('mode')=='160000':return {**metadata,'kind':'submodule'}
+        if item.get('size',0)>MAX_SOURCE_BYTES:
+            return {**metadata,'kind':'unavailable','message':'File exceeds the 3 MB GitHub read limit. Use a local clone in the desktop app.'}
+        blob=self.fetch(self.prefix+'/git/blobs/'+item['sha'])
+        if blob.get('size',0)>MAX_SOURCE_BYTES or blob.get('encoding')!='base64':
+            return {**metadata,'kind':'unavailable','message':'File is too large or uses an unsupported GitHub encoding.'}
+        content=base64.b64decode(blob['content'])
+        if len(content)>MAX_SOURCE_BYTES:raise ValueError('GitHub file exceeds 3 MB.')
+        return describe_file(path,content,revision=resolved,oid=item['sha'],kind='symlink' if item.get('mode')=='120000' else 'text')
 
     def history(self, ref='', page=1, limit=50):
         try:

@@ -9,6 +9,7 @@
   <link rel="stylesheet" href="/style.css">
   <link rel="stylesheet" href="/shared.css">
   <link rel="stylesheet" href="/history.css">
+  <link rel="stylesheet" href="/file-diff.css">
   <script type="module" src="/app.mjs"></script>
 </head>
 <body>
@@ -53,7 +54,7 @@
         <button id="currentFileButton" class="current-file-button">Choose a .vl file <span>⌄</span></button>
         <div id="sourcePath" class="source-path"></div>
       </section>
-      <section id="gitFiles" class="git-files" hidden><div class="section-heading"><span>Changed patches</span><span id="gitFileCount" class="count">0</span></div><div id="gitFileList"></div></section>
+      <section id="gitFiles" class="git-files" hidden><div class="section-heading"><span>Changed files</span><span id="gitFileCount" class="count">0</span></div><input id="gitFileSearch" type="search" placeholder="Filter changed files…" aria-label="Filter changed files"><div id="gitFileList"></div></section>
       <nav class="browser-tabs" aria-label="Browser view"><button id="browserTabFiles" aria-pressed="true">Files</button><button id="browserTabDefinitions" aria-pressed="false">Definitions <span id="definitionCount" class="count">0</span></button></nav>
       <section id="fileBrowserPanel" class="library-pane">
         <div class="file-sources" aria-label="File sources"><button data-file-source="project" aria-pressed="true">Project</button><button data-file-source="opened" aria-pressed="false">Opened</button><button data-file-source="recent" aria-pressed="false">Recent</button></div>
@@ -74,6 +75,7 @@
         <div><div id="breadcrumbs" class="breadcrumbs"></div><h1 id="scopeTitle">Open a VL patch</h1><div id="scopeSubtitle" class="scope-subtitle">Choose a file to explore its definitions and connections</div></div>
         <div class="scope-kind" id="scopeKind">VL</div>
       </div>
+      <section id="fileDiffPanel" class="file-diff-panel" aria-label="File comparison" hidden></section>
       <div class="toolbar">
         <label for="operationSelect">Operation</label><select id="operationSelect"><option value="">All operations</option></select>
         <div class="toolbar-spacer"></div>
@@ -131,9 +133,9 @@
     <p id="repositoryError" role="alert"></p><button class="primary" type="submit">Open repository →</button><button id="localProject" type="button">Return to local files</button></form>
     <p class="muted">Public repositories only. No GitHub sign-in or token is needed in your browser.</p>
   </dialog>
-  <dialog id="quickOpen" class="quick-open" aria-label="Find a VL file">
+  <dialog id="quickOpen" class="quick-open" aria-label="Find a file">
     <div class="quick-heading"><span id="quickWorkspace">Project</span><button id="closeQuick" aria-label="Close file picker">Esc</button></div>
-    <div class="quick-search"><span>⌕</span><input id="quickSearch" role="combobox" aria-label="Find a VL file" aria-controls="quickResults" aria-expanded="true" aria-autocomplete="list" placeholder="Find a VL file… Name, folder or path" autocomplete="off" spellcheck="false"></div>
+    <div class="quick-search"><span>⌕</span><input id="quickSearch" role="combobox" aria-label="Find a file" aria-controls="quickResults" aria-expanded="true" aria-autocomplete="list" placeholder="Find a file… Name, folder or path" autocomplete="off" spellcheck="false"></div>
     <div id="quickError" class="quick-error" role="alert" hidden></div>
     <div class="quick-sources"><button data-quick-source="project" aria-pressed="true">Project</button><button data-quick-source="opened" aria-pressed="false">Opened files</button><button data-quick-source="recent" aria-pressed="false">Recent</button><span id="quickResultCount"></span></div>
     <div id="quickResults" class="quick-results" role="listbox" aria-label="Matching files"></div>

@@ -3,6 +3,7 @@ import {diffDocuments,chooseComparisonFile} from './diff.mjs';
 import {createFileBrowser} from './file-browser.mjs';
 import {apiURL,viewerURL} from './remote.mjs';
 import {createHistoryBrowser} from './history.mjs';
+import {renderFileDiff} from './file-diff.mjs';
 
 const connectionParams=new URLSearchParams(location.search);
 const connection={repo:connectionParams.get('repo')||'',ref:connectionParams.get('ref')||'',snapshot:''};
@@ -19,7 +20,7 @@ const historyBrowser=createHistoryBrowser({api,
   onApply:async(base,target)=>{$('gitBase').value=base;$('gitTarget').value=target;return refreshComparison();}
 });
 const fileBrowser=createFileBrowser({getProject:()=>git.enabled?git.documents:state.catalog,getOpened:()=>state.uploads,
-  getWorkspace:()=>state.workspace,getCurrent:()=>state.model,
+  getWorkspace:()=>state.workspace,getCurrent:()=>git.generic?{path:git.file?.path}:state.model,
   getError:()=>$('error').hidden?'':$('errorText').textContent,
   getContext:()=>git.enabled?`Git snapshots · ${git.base?.id.slice(0,8)||'…'} → ${git.target?.id.slice(0,8)||'…'}`:'Project files',
   getStatus:path=>git.enabled?git.changes.find(file=>file.path===path||file.oldPath===path)?.status:null,
@@ -44,6 +45,10 @@ async function api(url, options) {
   return data;
 }
 function updateHash() {
+  if(git.generic&&git.comparison){
+    const hash=new URLSearchParams({file:git.file.path,git:'1',base:git.comparison.base.id,target:git.comparison.target.id,side:git.side});
+    history.replaceState(null,'','#'+hash);return;
+  }
   if (!state.model || state.model.uploaded) return;
   const hash=new URLSearchParams({file:state.model.path,scope:state.scope});
   if (state.operation) hash.set('operation',state.operation);
@@ -78,6 +83,7 @@ async function loadDocument(path, scope='', operation='') {
   } catch(error) {showError(error.message);refreshDocuments();return false;}
 }
 function installModel(model,scope='',operation='') {
+  git.generic=false;document.body.classList.remove('generic-diff');$('fileDiffPanel').hidden=true;
   state.model=model;
   $('welcome').hidden=true;
   for(const id of ['fitButton','zoomIn','zoomOut','downloadSvg','findingsButton'])$(id).disabled=false;
@@ -252,6 +258,11 @@ async function showExports(container,selected) {
 }
 function renderInspector() {
   const container=$('inspectorContent');container.replaceChildren();state.exportRequest++;
+  if(git.generic){
+    container.append(element('span','tag',git.comparison.kind),element('h2','',git.file.path.split('/').at(-1)));
+    metadata(container,[['File',git.file.path],['Base',git.comparison.base.id],['Target',git.comparison.target.id]]);
+    container.append(element('p','notice','This file uses a text or metadata comparison. Choose a VL file for a visual graph diff.'));return;
+  }
   if(!state.model)return;
   const selected=state.model.byId.get(state.selected)||state.model.byId.get(state.operation)||state.scene.scope,attrs=selected.attrs;
   container.append(element('span','tag',selected.tag),element('h2','',labelOf(selected)));
@@ -339,22 +350,23 @@ async function refreshComparison(restore={}) {
     git.base=data.base;git.target=data.target;git.changes=data.changes;git.documents=data.documents;refreshDocuments();
     $('gitResolved').textContent=`${data.base.id.slice(0,8)} → ${data.target.id.slice(0,8)}`;
     renderGitFiles();
-    const preferred=restore.file||state.model?.path;
+    const preferred=restore.file||git.file?.path||state.model?.path;
     const {path,entry}=chooseComparisonFile(git.changes,git.documents,preferred);
-    if(!path){clearDocument();$('gitSummary').textContent='No VL documents in these snapshots';return true;}
+    if(!path){clearDocument();$('gitSummary').textContent='No files in these snapshots';return true;}
     return await loadComparison(path,restore.scope||'',restore.operation||'',entry,restore.side||'after');
   }catch(error){showError(error.message);return false;}
   finally{if(request===git.request)$('gitCompare').disabled=false;}
 }
 function renderGitFiles() {
   $('gitFileCount').textContent=String(git.changes.length);const list=$('gitFileList');list.replaceChildren();
-  for(const entry of git.changes){
+  const query=$('gitFileSearch').value.trim().toLowerCase();
+  for(const entry of git.changes.filter(f=>(f.path+' '+(f.oldPath||'')).toLowerCase().includes(query))){
     const b=button('',()=>loadComparison(entry.path,'','',entry),`git-file${git.file?.path===entry.path?' active':''}`);
     b.title=`${entry.oldPath&&entry.newPath&&entry.oldPath!==entry.newPath?entry.oldPath+' → ':''}${entry.path}${entry.untracked?' · untracked':''}`;
     b.append(element('span',`git-status ${entry.status}`,{added:'A',removed:'D',renamed:'R',modified:'M'}[entry.status]),element('span','',entry.path));
     list.append(b);
   }
-  if(!git.changes.length)list.append(element('p','muted','No changed VL files between these snapshots.'));
+  if(!git.changes.length)list.append(element('p','muted','No changed files between these snapshots.'));
 }
 async function loadComparison(path,scope='',operation='',entry=null,side='after') {
   const request=++state.load;
@@ -364,6 +376,13 @@ async function loadComparison(path,scope='',operation='',entry=null,side='after'
       oldPath:entry.oldPath||'',newPath:entry.newPath||''})}`);
     if(request!==state.load||!git.enabled)return;
     git.comparison=data;git.file=entry;
+    if(data.kind&&data.kind!=='vl'){
+      clearDocument();git.generic=true;git.before=null;git.after=null;git.diff=null;git.fileView='diff';git.side=side==='before'?'before':'after';
+      document.body.classList.add('generic-diff');$('fileDiffPanel').hidden=false;
+      $('scopeTitle').textContent=path.split('/').at(-1);$('scopeSubtitle').textContent=path;$('scopeKind').textContent=data.kind.toUpperCase();
+      $('sourcePath').textContent=path;$('documentVersion').textContent='Git file comparison';$('error').hidden=true;
+      fileBrowser.remember(path);refreshDocuments();renderGeneric();renderGitFiles();renderInspector();updateHash();return true;
+    }
     git.before=data.before?.tree?indexDocument(data.before):null;git.after=data.after?.tree?indexDocument(data.after):null;
     recomputeDiff();
     git.side=side==='before'&&git.before?'before':git.after?'after':'before';
@@ -380,14 +399,24 @@ function recomputeDiff() {
   catch(error){git.diff=null;git.structuralError=error.message;}
 }
 function updateGitSummary() {
+  if(git.generic){
+    const data=git.comparison;$('gitSummary').textContent=data.kind==='text'?data.lineStats.added+' added · '+data.lineStats.removed+' removed lines':data.kind==='binary'?'Binary file comparison':'File metadata comparison';
+    $('gitBefore').disabled=data.kind!=='text'||!data.before;$('gitAfter').disabled=data.kind!=='text'||!data.after;
+    $('gitBefore').setAttribute('aria-pressed',String(git.fileView==='before'));$('gitAfter').setAttribute('aria-pressed',String(git.fileView==='after'));return;
+  }
   const summary=git.diff?.summary;
   $('gitSummary').textContent=summary?`${summary.added} added · ${summary.removed} removed · ${summary.changed} changed elements${summary.layout?` · ${summary.layout} Bounds only`:''}`:'XML diff only · a snapshot could not be structurally compared';
   $('gitBefore').disabled=!git.before;$('gitAfter').disabled=!git.after;
   $('gitBefore').setAttribute('aria-pressed',String(git.side==='before'));$('gitAfter').setAttribute('aria-pressed',String(git.side==='after'));
 }
 function switchSide(side,scope=state.scope) {
+  if(git.generic){git.fileView=side;git.side=side;renderGeneric();updateHash();return;}
   if(!git[side])return;
   git.side=side;installModel(git[side],scope,state.operation);updateGitSummary();
+}
+function renderGeneric(){
+  renderFileDiff($('fileDiffPanel'),git.comparison,git.fileView,view=>{git.fileView=view;if(view!=='diff')git.side=view;renderGeneric();updateHash();});
+  updateGitSummary();
 }
 function navigateChange(record,side=null) {
   side=side||(record.status==='removed'?'before':git.after?.byId.has(record.id)?'after':'before');
@@ -516,11 +545,12 @@ $('gitToggle').addEventListener('click',()=>setGitMode(!git.enabled));
 $('gitHistoryButton').addEventListener('click',()=>historyBrowser.open());
 $('gitRangeButton').addEventListener('click',()=>historyBrowser.open());
 $('gitCompare').addEventListener('click',()=>refreshComparison());
+$('gitFileSearch').addEventListener('input',renderGitFiles);
 for(const id of ['gitBase','gitTarget'])$(id).addEventListener('keydown',event=>{if(event.key==='Enter')void refreshComparison();});
 $('gitBefore').addEventListener('click',()=>switchSide('before'));
 $('gitAfter').addEventListener('click',()=>switchSide('after'));
 $('gitRemoved').addEventListener('change',()=>{if(state.model)openScope(state.scope,state.operation);});
-$('gitIgnoreLayout').addEventListener('change',()=>{recomputeDiff();updateGitSummary();renderDefinitions();draw();renderInspector();});
+$('gitIgnoreLayout').addEventListener('change',()=>{if(git.generic)return;recomputeDiff();updateGitSummary();renderDefinitions();draw();renderInspector();});
 $('browseToggle').addEventListener('click',()=>{document.body.classList.toggle(innerWidth<600?'mobile-browse':'sidebar-off');requestAnimationFrame(fit);});
 $('inspectorToggle').addEventListener('click',()=>{
   const mobile=innerWidth<850;document.body.classList.toggle(mobile?'mobile-details':'inspector-off');
@@ -558,6 +588,7 @@ $('downloadSvg').addEventListener('click',()=>{
 });
 let resizeTimer;window.addEventListener('resize',()=>{clearTimeout(resizeTimer);resizeTimer=setTimeout(fit,150);});
 function clearDocument(){
+  git.generic=false;document.body.classList.remove('generic-diff');$('fileDiffPanel').hidden=true;
   state.model=null;state.scene=null;state.selected='';state.camera=null;state.scope='';state.operation='';
   $('welcome').hidden=false;$('graph').replaceChildren();$('scopeTitle').textContent='Open a VL patch';$('scopeSubtitle').textContent='Choose a file to explore its definitions and connections';
   $('breadcrumbs').replaceChildren();$('scopeKind').textContent='VL';$('graphStats').textContent='No file selected';$('operationNote').hidden=true;

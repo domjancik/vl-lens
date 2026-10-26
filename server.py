@@ -123,15 +123,18 @@ def find_exports(path, document_id, identity):
 
 def compare_snapshots(repository, base, target, old_path, new_path):
     before_revision, after_revision = repository.resolve(base), repository.resolve(target)
+    vl_pair=all(p.lower().endswith('.vl') for p in (old_path,new_path) if p)
     if before_revision['kind'] == 'worktree':
         raise ValueError('Choose a commit or INDEX as the base revision.')
 
     def snapshot(revision, path):
         if not path:
             return None
-        data = repository.read(revision['id'], path)
+        data = (repository.read_file if hasattr(repository,'read_file') else repository.read)(revision['id'], path)
         if data is None:
             return None
+        if not vl_pair or 'source' not in data or data.get('kind') in ('symlink','submodule'):
+            return {**data,'revision':revision}
         try:
             return {**parse_vl(data['source'], path), 'revision': revision}
         except ValueError as error:
@@ -140,14 +143,46 @@ def compare_snapshots(repository, base, target, old_path, new_path):
     before, after = snapshot(before_revision, old_path), snapshot(after_revision, new_path)
     if before is None and after is None:
         raise ValueError('This file is absent from both selected snapshots.')
+    if not all(s.get('tree') is not None or s.get('parseError') for s in (before,after) if s):
+        return compare_files(before_revision,after_revision,old_path,new_path,before,after)
     lines = difflib.unified_diff((before or {}).get('source', '').splitlines(),
                                  (after or {}).get('source', '').splitlines(),
                                  fromfile=f'{old_path or "/dev/null"} ({base})',
                                  tofile=f'{new_path or "/dev/null"} ({target})', lineterm='')
     text = '\n'.join(lines)
-    return {'provider': 'local-git', 'base': before_revision, 'target': after_revision,
+    return {'provider': 'local-git', 'kind':'vl', 'base': before_revision, 'target': after_revision,
             'oldPath': old_path, 'newPath': new_path, 'before': before, 'after': after,
             'textDiff': text[:512000], 'textDiffTruncated': len(text) > 512000}
+
+
+def compare_files(base,target,old_path,new_path,before,after):
+    snapshots=[s for s in (before,after) if s]
+    kind='text' if all('source' in s for s in snapshots) else 'binary' if any(s.get('kind')=='binary' for s in snapshots) else 'metadata'
+    rows=[];added=removed=0;truncated=any(s.get('sourceTruncated') for s in snapshots)
+    if kind=='text':
+        left=(before or {}).get('source','').splitlines()
+        right=(after or {}).get('source','').splitlines()
+        matcher=difflib.SequenceMatcher(None,left,right)
+        budget=0
+        for group in matcher.get_grouped_opcodes(3):
+            if truncated and len(rows)>=6000:break
+            rows.append({'kind':'hunk','text':f'@@ -{group[0][1]+1},{group[-1][2]-group[0][1]} +{group[0][3]+1},{group[-1][4]-group[0][3]} @@'})
+            for op,a,b,c,d in group:
+                added+=d-c if op in ('insert','replace') else 0
+                removed+=b-a if op in ('delete','replace') else 0
+                pieces=[('context',left[a:b],a+1,c+1)] if op=='equal' else (
+                    [('remove',left[a:b],a+1,None)] if op=='delete' else [('add',right[c:d],None,c+1)] if op=='insert'
+                    else [('remove',left[a:b],a+1,None),('add',right[c:d],None,c+1)])
+                for row_kind,content,old,new in pieces:
+                    for index,text in enumerate(content):
+                        budget+=len(text)+50
+                        if len(rows)>=6000 or budget>260000:truncated=True;continue
+                        rows.append({'kind':row_kind,'text':text,'oldLine':old+index if old is not None else None,'newLine':new+index if new is not None else None})
+    identical=bool(before and after and before.get('sha256') and before.get('sha256')==after.get('sha256'))
+    text='\n'.join(('+' if r['kind']=='add' else '-' if r['kind']=='remove' else ' ' if r['kind']=='context' else '')+r['text'] for r in rows)
+    return {'provider':'local-git','kind':kind,'base':base,'target':target,'oldPath':old_path,'newPath':new_path,
+            'before':before,'after':after,'lines':rows,'lineStats':{'added':added,'removed':removed},
+            'identical':identical,'textDiff':text,'textDiffTruncated':truncated}
 
 
 class Handler(BaseHTTPRequestHandler):
@@ -199,8 +234,8 @@ class Handler(BaseHTTPRequestHandler):
                 repository = LocalGitRepository(ROOT,project=PROJECT)
                 base = repository.resolve(query.get('base', ['HEAD'])[0])
                 target = repository.resolve(query.get('target', ['WORKTREE'])[0])
-                before_paths = set(repository.documents(base['id']))
-                after_paths = set(repository.documents(target['id']))
+                before_paths = set(repository.files(base['id']))
+                after_paths = set(repository.files(target['id']))
                 self.send_data({'provider': 'local-git', 'base': base, 'target': target,
                                 'changes': repository.changes(base['id'], target['id']),
                                 'documents': [{'path': p, 'existsBefore': p in before_paths, 'existsAfter': p in after_paths}

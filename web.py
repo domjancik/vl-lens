@@ -102,7 +102,7 @@ class WebHandler(server.Handler):
             self.send_data(repository.history(get('ref'),get('page','1'),get('limit','50')))
         elif route == '/api/git/changes':
             base, target = repository.resolve(get('base')), repository.resolve(get('target'))
-            before, after = set(repository.documents(base['id'])), set(repository.documents(target['id']))
+            before, after = set(repository.files(base['id'])), set(repository.files(target['id']))
             self.send_data({'provider': 'github', 'base': base, 'target': target,
                             'changes': repository.changes(base['id'], target['id']),
                             'documents': [{'path': p, 'existsBefore': p in before, 'existsAfter': p in after}

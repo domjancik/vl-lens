@@ -80,6 +80,22 @@ class GitHubTests(unittest.TestCase):
             self.repo.history()
         self.assertEqual(self.calls,['/repos/person/library'])
 
+    def test_generic_github_files_are_listed_without_changing_vl_catalog(self):
+        self.assertTrue(hasattr(self.repo,'read_file'))
+        self.trees[A].append({'path':'README.md','sha':'5'*40,'type':'blob','mode':'100644'})
+        self.trees[A].append({'path':'image.bin','sha':'6'*40,'type':'blob','mode':'100644'})
+        original=self.repo.fetch
+        def fetch(path):
+            if path.endswith('/git/blobs/'+'6'*40):
+                return {'size':3,'encoding':'base64','content':base64.b64encode(b'\x00\xffB').decode()}
+            return original(path)
+        self.repo.fetch=fetch
+        self.assertIn('README.md',self.repo.files(A))
+        self.assertNotIn('README.md',self.repo.documents(A))
+        self.assertEqual(self.repo.read_file(A,'README.md')['kind'],'text')
+        self.assertEqual(self.repo.read_file(A,'image.bin')['kind'],'binary')
+        self.assertEqual(self.repo.read_file(A,'Link.vl')['kind'],'symlink')
+
     def test_branch_overview_always_includes_default_branch_beyond_first_page(self):
         from urllib.parse import urlsplit,parse_qs
         self.assertTrue(hasattr(self.repo,'history'))
@@ -114,8 +130,8 @@ class GitHubTests(unittest.TestCase):
     def test_compares_exact_trees_including_divergent_refs_and_exact_renames(self):
         changes = self.repo.changes('old', 'new')
         self.assertEqual([(c['path'], c['status']) for c in changes],
-                         [('Edit.vl', 'modified'), ('New.VL', 'renamed')])
-        self.assertEqual(changes[1]['oldPath'], 'Old.vl')
+                         [('Edit.vl', 'modified'), ('Link.vl','removed'), ('New.VL', 'renamed')])
+        self.assertEqual(changes[-1]['oldPath'], 'Old.vl')
         self.assertFalse(any('/compare/' in c for c in self.calls))
 
     def test_refuses_private_repos_even_with_server_credentials(self):

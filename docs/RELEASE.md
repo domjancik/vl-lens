@@ -1,12 +1,11 @@
-VL Lens v0.2.0 adds a visual Git history and change-range browser.
+VL Lens v0.3.0 adds mixed-file Git diffs.
 
-- Commit lanes and merge connections with branch/head badges, authors, dates and IDs.
-- Base / Target selection from commits or branch heads, with loaded-range highlighting.
-- Single-commit review, reversed comparisons and local staged/unstaged/working-tree presets.
-- Branch and commit search, pinned pagination and clear unloaded-history boundaries.
-- Local all-ref history and a bounded public GitHub branch overview.
-- Range changes keep the current VL patch selected when it exists in both snapshots.
+- All Git-listed file types appear in changed files and Git snapshot browsing.
+- Text diffs have line numbers, colored hunks, Before/After views and line wrapping.
+- Binary files show sizes and content identities for both snapshots.
+- HTML/SVG stay inert text; symlinks are not followed; submodule pointers retain metadata.
+- Added, deleted and renamed files remain navigable alongside visual VL diffs.
 
-Download the Windows ZIP, extract the entire folder and run VL-Lens.exe.
-Windows 10/11 x64 and WebView2 Runtime are required; local Git comparisons also
-require Git. This is an unsigned preview. Public GitHub repositories only.
+Extract the Windows ZIP and run VL-Lens.exe. Windows 10/11 x64 and WebView2
+Runtime are required. Git is required for local repository comparisons.
+Unsigned preview; public GitHub repositories only.

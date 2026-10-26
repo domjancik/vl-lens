@@ -3,6 +3,7 @@ import os
 from pathlib import Path
 import re
 import subprocess
+from filetypes import validate_git_path,describe_file
 
 MAX_BYTES = 12 * 1024 * 1024
 PATCH_ROOTS = ('.',)
@@ -40,8 +41,21 @@ class LocalGitRepository:
         return {'id': oid, 'label': revision, 'kind': 'commit'}
 
     def _path(self, path):
-        self.project.document_path(path,must_exist=False)
-        return path
+        return validate_git_path(path)
+
+    def _included(self,path):
+        try:self._path(path);return True
+        except ValueError:return False
+
+    def files(self, revision):
+        resolved=self.resolve(revision)
+        if resolved['kind']=='commit':
+            raw=self._git('ls-tree','-r','--name-only','-z',resolved['id'],'--',*PATCH_ROOTS)
+        else:
+            args=['--cached']+(['--others','--exclude-standard'] if resolved['kind']=='worktree' else [])
+            raw=self._git('ls-files',*args,'-z','--',*PATCH_ROOTS)
+        return sorted({p for p in raw.decode('utf-8',errors='replace').split('\0') if p and self._included(p)
+                       and (resolved['kind']!='worktree' or (self.root/p).is_file() or (self.root/p).is_symlink() or (self.root/p).is_dir())})
 
     def revisions(self):
         head = self.resolve('HEAD')['id']
@@ -135,8 +149,8 @@ class LocalGitRepository:
             new = old
             if status[0] in ('R', 'C'):
                 new = tokens[index]; index += 1
-            old = old if status[0] != 'A' and old.lower().endswith('.vl') and not self.project.excluded(old) else None
-            new = new if status[0] != 'D' and new.lower().endswith('.vl') and not self.project.excluded(new) else None
+            old = old if status[0] != 'A' and self._included(old) else None
+            new = new if status[0] != 'D' and self._included(new) else None
             if not old and not new:
                 continue
             for path in filter(None, (old, new)):
@@ -146,20 +160,43 @@ class LocalGitRepository:
                             'untracked': False})
         if after['kind'] == 'worktree':
             for path in self._git('ls-files', '--others', '--exclude-standard', '-z', '--', *PATCH_ROOTS).decode('utf-8', errors='replace').split('\0'):
-                if path and path.lower().endswith('.vl') and not self.project.excluded(path):
+                if path and self._included(path):
                     self._path(path)
                     entries.append({'path': path, 'oldPath': None, 'newPath': path, 'status': 'added', 'untracked': True})
         return sorted(entries, key=lambda entry: entry['path'])
 
     def read(self, revision, path):
+        result=self.read_file(revision,path)
+        if result is None:return None
+        if 'source' not in result:raise ValueError('File is binary or exceeds the source size limit.')
+        return result
+
+    def read_file(self, revision, path):
         path = self._path(path)
         resolved = self.resolve(revision)
         if resolved['kind'] == 'worktree':
+            listed=self._git('ls-files','--cached','--others','--exclude-standard','-z','--',path).decode('utf-8',errors='replace').split('\0')
+            if path not in listed:raise ValueError('The file is ignored or is not listed by Git.')
             file = self.root / path
+            if not file.parent.resolve().is_relative_to(self.root):raise ValueError('The file leaves the project.')
+            if file.is_symlink():return describe_file(path,os.readlink(file).encode(),kind='symlink',revision=resolved)
+            if file.is_dir():
+                entries=self._git('ls-files','--stage','-z','--',path).split(b'\0')
+                pointer=next((r.split(b'\t',1)[0].split()[1].decode() for r in entries
+                              if r and r.split(b'\t',1)[1].decode()==path and r.startswith(b'160000 ') and r.split(b'\t',1)[0].endswith(b' 0')),None)
+                if pointer:
+                    message='Submodule pointer; nested working-tree changes are not expanded.'
+                    if (file/'.git').exists():
+                        try:
+                            head=self._git('-C',path,'rev-parse','--verify','HEAD').decode().strip()
+                            if re.fullmatch(r'[a-f0-9]{40,64}',head):pointer=head
+                        except ValueError:message+=' The nested HEAD is unavailable; showing the index pointer.'
+                    return {'path':path,'revision':resolved,'kind':'submodule','oid':pointer,'bytes':0,'message':message}
+                return {'path':path,'revision':resolved,'kind':'unavailable','bytes':0,'message':'Directory or unresolved submodule.'}
             if not file.is_file():
                 return None
             if file.stat().st_size > MAX_BYTES:
-                raise ValueError('Document exceeds 12 MB.')
+                return {'path':path,'revision':resolved,'kind':'unavailable','bytes':file.stat().st_size,'message':'File exceeds the 12 MB local read limit.'}
             data = file.read_bytes()
         else:
             if resolved['kind'] == 'index':
@@ -175,11 +212,10 @@ class LocalGitRepository:
                 return None
             # Index metadata: mode oid stage. Tree metadata: mode type oid.
             oid = metadata[1 if resolved['kind'] == 'index' else 2].decode()
-            if int(self._git('cat-file', '-s', oid)) > MAX_BYTES:
-                raise ValueError('Document exceeds 12 MB.')
+            mode=metadata[0].decode()
+            if mode=='160000':return {'path':path,'revision':resolved,'kind':'submodule','oid':oid,'bytes':0}
+            size=int(self._git('cat-file', '-s', oid))
+            if size > MAX_BYTES:
+                return {'path':path,'revision':resolved,'kind':'unavailable','oid':oid,'bytes':size,'message':'File exceeds the 12 MB local read limit.'}
             data = self._git('cat-file', 'blob', oid)
-        try:
-            source = data.decode('utf-8-sig')
-        except UnicodeError as error:
-            raise ValueError('The revision is not a UTF-8 VL document.') from error
-        return {'path': path, 'revision': resolved, 'source': source}
+        return describe_file(path,data,revision=resolved,**({'oid':oid,'kind':'symlink' if mode=='120000' else 'text'} if resolved['kind']!='worktree' else {}))
