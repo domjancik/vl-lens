@@ -1,0 +1,13 @@
+.venv
+.git
+.github
+build
+dist
+tests
+docs
+desktop.py
+requirements-desktop.txt
+scripts
+*.jpg
+*.log
+smoke-report.json

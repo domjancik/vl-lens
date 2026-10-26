@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>VL Lens — A clear view of your patches</title>
+  <meta name="description" content="Explore VL graphs, inspect saved XML and review visual Git diffs. Open public GitHub repositories in your browser or download VL Lens for Windows.">
+  <link rel="stylesheet" href="/landing.css"><script type="module" src="/landing.mjs"></script>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%237ee0b8'/%3E%3Ctext x='5' y='23' font-size='22' fill='%23111d24'%3EvL%3C/text%3E%3C/svg%3E">
+</head>
+<body>
+  <nav class="nav"><a href="/" class="wordmark"><span class="mark">vL</span>VL Lens<span class="preview-label">PREVIEW</span></a>
+    <div><a href="#workflow">How it works</a><a href="https://github.com/domjancik/vl-lens">GitHub ↗</a><a href="/viewer" class="button small">Open viewer <span>↗</span></a></div>
+  </nav>
+  <main>
+    <section class="hero">
+      <div class="hero-copy"><p class="eyebrow"><span class="status"></span> A NEW PERSPECTIVE ON VL</p>
+        <h1>See the patch.<br><span>Understand<br>the change.</span></h1>
+        <p class="lead">Your visual code deserves a visual review.<br>Explore saved VL graphs, follow connections, and see what changed between Git snapshots.</p>
+        <div class="hero-actions"><a href="/viewer" class="button primary">Launch the viewer <span>↗</span></a><a href="#download" class="text-link">Get the desktop app ↓</a></div>
+        <p class="fine">Read only. No gamma installation required.</p>
+      </div>
+      <div class="graph-preview" aria-label="Illustration of a VL graph with a highlighted changed node">
+        <div class="preview-title"><span><span class="mini-dot"></span> Signal.vl</span><span class="snapshot">main <span>→</span> feature</span></div>
+        <div class="preview-toolbar"><span>Signal / Update</span><span class="change-badge">1 CHANGED</span></div>
+        <svg viewBox="0 0 580 410" role="img" aria-label="A signal flows through Multiply and Damper nodes to an output">
+          <defs><pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse"><circle cx="1" cy="1" r="0.7" fill="#354149"/></pattern></defs>
+          <rect width="580" height="410" fill="url(#grid)"/>
+          <g fill="none" stroke-width="2"><path d="M125 115V155H255V182" stroke="#7cbae0"/><path d="M310 220V252H215V278" stroke="#7cbae0"/><path d="M270 316V358H450V145" stroke="#7ee0b8"/><path d="M450 108V65H185V107" stroke="#c6ab6a" stroke-dasharray="5 5"/></g>
+          <g font-family="ui-monospace, monospace" font-size="13">
+            <rect x="74" y="84" width="135" height="31" rx="4" fill="#202d38" stroke="#455765"/><text x="89" y="104" fill="#e4eaed">Signal</text>
+            <rect x="220" y="182" width="137" height="38" rx="4" fill="#243d36" stroke="#7ee0b8"/><text x="237" y="206" fill="#e4eaed">Multiply</text>
+            <rect x="154" y="278" width="144" height="38" rx="4" fill="#202d38" stroke="#455765"/><text x="171" y="302" fill="#e4eaed">Damper</text>
+            <rect x="393" y="108" width="113" height="37" rx="4" fill="#202d38" stroke="#455765"/><text x="410" y="132" fill="#e4eaed">Output</text>
+            <rect x="329" y="231" width="190" height="61" rx="6" fill="#18252c" stroke="#364b52"/><text x="342" y="252" font-size="10" fill="#99b1b8">DEFAULT VALUE</text><text x="342" y="274" fill="#d6a09a" text-decoration="line-through">0.5</text><text x="397" y="274" fill="#7ee0b8">→ 0.8</text>
+          </g><g fill="#9ed7f3"><circle cx="125" cy="115" r="3"/><circle cx="255" cy="182" r="3"/><circle cx="310" cy="220" r="3"/><circle cx="215" cy="278" r="3"/></g>
+        </svg>
+        <div class="preview-bottom"><span>Saved layout. Full context.</span><span><i></i> Added <i></i> Changed <i></i> Removed</span></div>
+      </div>
+    </section>
+    <section class="connect-section" aria-labelledby="connect-title">
+      <div><p class="eyebrow">START WITH A REPOSITORY</p><h2 id="connect-title">From GitHub to graph.</h2><p>Paste a public repository URL. Pick a patch. Follow the connections.</p></div>
+      <form id="landingRepository"><label class="sr-only" for="repository">GitHub repository</label><div class="repository-field"><span>⑂</span><input id="repository" placeholder="github.com/owner/repository" required spellcheck="false" autocomplete="off"><button type="submit">Explore →</button></div><p id="repositoryError" role="alert">Public repositories · no sign-in needed</p></form>
+    </section>
+    <section id="workflow" class="features">
+      <article><span class="feature-number">01 / EXPLORE</span><h3>A familiar canvas.</h3><p>Browse folders, jump to a patch with Ctrl+P, and move through definitions, operations and nested regions.</p></article>
+      <article><span class="feature-number">02 / INSPECT</span><h3>Follow the evidence.</h3><p>Select nodes, pins and wires. Inspect saved values, reference hints and the original XML beside the graph.</p></article>
+      <article><span class="feature-number">03 / COMPARE</span><h3>Review the visual diff.</h3><p>Compare commits, branches or tags. See additions, removals and changed attributes, with an option to ignore layout.</p></article>
+    </section>
+    <section id="download" class="download-section"><div><p class="eyebrow">KEEP IT ON YOUR MACHINE</p><h2>The same lens.<br>Your local workspace.</h2><p>Open local projects and review working-tree changes in a native desktop window. Your local patches stay on your computer.</p><a class="button primary" href="https://github.com/domjancik/vl-lens/releases/latest/download/VL-Lens-Windows-x64.zip">Download for Windows <span>↓</span></a><p class="fine">Portable ZIP · Windows 10/11 x64 · WebView2 required<br>Unsigned preview · Git required for local Git comparisons</p></div><div class="desktop-card"><span class="desktop-title"><i></i><i></i><i></i>VL Lens Desktop</span><span class="desktop-icon">vL</span><strong>A local view.<br>With room to explore.</strong><span>Local folders / Git snapshots / Public GitHub</span></div></section>
+    <section class="scope-note"><b>Made for reading visual code.</b><p>VL Lens renders the structure saved in VL XML. It does not compile or execute patches. Some implicit pins and compiler-resolved types are outside the saved file.</p></section>
+  </main>
+  <footer><a href="/" class="wordmark"><span class="mark">vL</span>VL Lens</a><span>An independent tool for the VL community.</span><a href="https://github.com/domjancik/vl-lens">Source & documentation ↗</a></footer>
+</body>
+</html>

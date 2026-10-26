@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Document xmlns:p="property" Id="demo-document" LanguageVersion="2024.6">
+  <Node Id="signal" Name="Signal" Bounds="30,30,120,80">
+    <p:NodeReference><Choice Kind="ProcessDefinition" Name="Process" /></p:NodeReference>
+    <Patch Id="signal-body">
+      <Canvas Id="canvas">
+        <Pad Id="input" Name="Input" Bounds="50,60,80,25" DefaultValue="0.5">
+          <Pin Id="input-output" Name="Output" Kind="OutputPin" />
+        </Pad>
+        <Node Id="multiply" Name="Multiply" Bounds="190,160,110,30">
+          <p:NodeReference LastDependency="builtin"><Choice Kind="OperationCallFlag" Name="*" /></p:NodeReference>
+          <Pin Id="multiply-input" Name="Input" Kind="InputPin" />
+          <Pin Id="multiply-factor" Name="Factor" Kind="InputPin" DefaultValue="0.8" />
+          <Pin Id="multiply-output" Name="Output" Kind="OutputPin" />
+        </Node>
+        <Pad Id="output" Name="Output" Bounds="330,260,80,25">
+          <Pin Id="output-input" Name="Input" Kind="InputPin" />
+        </Pad>
+        <Link Id="input-link" Ids="input-output,multiply-input" />
+        <Link Id="output-link" Ids="multiply-output,output-input" />
+      </Canvas>
+    </Patch>
+  </Node>
+</Document>

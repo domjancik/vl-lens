@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Document xmlns:p="property" Id="ViewerSafetyFixture" LanguageVersion="2025.7.0">
+  <Patch Id="Root">
+    <Canvas Id="Canvas" CanvasType="FullCategory" DefaultCategory="Viewer.Tests">
+      <Node Id="Definition" Name="&lt;img src=x onerror=alert(1)&gt;" Bounds="0,0,200,40">
+        <p:NodeReference><Choice Kind="ClassDefinition" Name="Class" /></p:NodeReference>
+        <Patch Id="Body">
+          <Canvas Id="BodyCanvas">
+            <Pad Id="SafeLiteral" Value="&lt;script&gt;alert(1)&lt;/script&gt;" Bounds="0,0,240,30" />
+          </Canvas>
+          <Patch Id="Update" Name="Update" />
+        </Patch>
+      </Node>
+    </Canvas>
+  </Patch>
+</Document>
