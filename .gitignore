@@ -13,3 +13,5 @@ tests/project-test-*/
 docs/*-local.json
 smoke-report.json
 *.log
+
+.vercel

@@ -70,7 +70,7 @@ class WebHandler(server.Handler):
                 else:
                     super().do_GET()
                 return
-            name = {'/': 'landing.html', '/viewer': 'index.html', '/viewer/': 'index.html'}.get(route)
+            name = {'/': 'index.html', '/viewer': 'viewer.html', '/viewer/': 'viewer.html'}.get(route)
             if not name:
                 candidate = route.removeprefix('/')
                 if '/' not in candidate and candidate in {p.name for p in server.STATIC.iterdir() if p.is_file()}:

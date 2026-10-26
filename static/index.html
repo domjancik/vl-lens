@@ -1,117 +1,54 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta name="description" content="Explore VL patches, saved graph layouts, operations and generated C# references locally.">
-  <title>VL Lens · Patch explorer</title>
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%237ee0b8'/%3E%3Cpath d='M7 10l6 13 5-13m3 0v13h5' fill='none' stroke='%23111d24' stroke-width='2.5'/%3E%3C/svg%3E">
-  <link rel="stylesheet" href="/style.css">
-  <script type="module" src="/app.mjs"></script>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>VL Lens — A clear view of your patches</title>
+  <meta name="description" content="Explore VL graphs, inspect saved XML and review visual Git diffs. Open public GitHub repositories in your browser or download VL Lens for Windows.">
+  <link rel="stylesheet" href="/landing.css"><script type="module" src="/landing.mjs"></script>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%237ee0b8'/%3E%3Ctext x='5' y='23' font-size='22' fill='%23111d24'%3EvL%3C/text%3E%3C/svg%3E">
 </head>
 <body>
-  <header class="topbar">
-    <button class="brand" id="browseToggle" title="Toggle document browser"><span class="brand-mark">vL</span><span>VL Lens<small>PATCH EXPLORER</small></span></button>
-    <span class="local-badge" id="modeBadge">READ ONLY</span>
-    <div class="top-actions">
-      <a href="/" class="home-link" title="VL Lens home">Home</a>
-      <button id="connectGitHub">Connect GitHub</button>
-      <button id="gitToggle" aria-pressed="false">⑂ Git diff</button>
-      <button id="aboutButton" class="quiet">How it works</button>
-      <button id="quickOpenButton" class="primary">Browse files <kbd>Ctrl P</kbd></button>
-      <details id="openMenu" class="open-menu"><summary>Open…</summary><div>
-        <button id="uploadButton">Open files…</button><button id="folderButton">Open folder…</button><button id="refreshProject">Refresh project</button>
-      </div></details>
-      <input id="fileInput" type="file" accept=".vl" multiple hidden>
-      <input id="folderInput" type="file" webkitdirectory multiple hidden>
-      <button id="inspectorToggle" class="quiet" aria-pressed="true">Details</button>
-    </div>
-  </header>
-  <div id="error" role="alert" hidden><span id="errorText"></span><button id="dismissError" aria-label="Dismiss error">×</button></div>
-  <section id="gitBar" class="git-bar" aria-label="Git comparison" hidden>
-    <div class="git-revisions">
-      <label>Base<input id="gitBase" list="gitBaseOptions" value="HEAD" spellcheck="false" aria-label="Base revision"></label><span class="git-arrow">→</span>
-      <label>Target<input id="gitTarget" list="gitTargetOptions" value="WORKTREE" spellcheck="false" aria-label="Target revision"></label>
-      <datalist id="gitBaseOptions"></datalist><datalist id="gitTargetOptions"></datalist>
-      <button id="gitCompare" class="primary">Compare</button><span id="gitResolved" class="git-resolved"></span>
-    </div>
-    <div class="git-options"><span id="gitSummary">Choose two snapshots</span><div class="toolbar-spacer"></div>
-      <button id="gitBefore" aria-pressed="false">Before</button><button id="gitAfter" aria-pressed="true">After</button>
-      <label class="check"><input id="gitRemoved" type="checkbox" checked> Show removals</label>
-      <label class="check"><input id="gitIgnoreLayout" type="checkbox"> Ignore Bounds</label>
-    </div>
-  </section>
-  <main class="workspace">
-    <aside class="sidebar" aria-label="Patch browser">
-      <section class="source-picker">
-        <div class="workspace-label"><span>▱</span><span id="workspaceName">Project</span><span id="documentCount" class="count">…</span></div>
-        <div class="current-file-label">CURRENT FILE<button id="revealFile" title="Reveal current file in folders" aria-label="Reveal current file">⌖</button></div>
-        <button id="currentFileButton" class="current-file-button">Choose a .vl file <span>⌄</span></button>
-        <div id="sourcePath" class="source-path"></div>
-      </section>
-      <section id="gitFiles" class="git-files" hidden><div class="section-heading"><span>Changed patches</span><span id="gitFileCount" class="count">0</span></div><div id="gitFileList"></div></section>
-      <nav class="browser-tabs" aria-label="Browser view"><button id="browserTabFiles" aria-pressed="true">Files</button><button id="browserTabDefinitions" aria-pressed="false">Definitions <span id="definitionCount" class="count">0</span></button></nav>
-      <section id="fileBrowserPanel" class="library-pane">
-        <div class="file-sources" aria-label="File sources"><button data-file-source="project" aria-pressed="true">Project</button><button data-file-source="opened" aria-pressed="false">Opened</button><button data-file-source="recent" aria-pressed="false">Recent</button></div>
-        <label class="sr-only" for="fileSearch">Search project files</label><input id="fileSearch" type="search" placeholder="Search names or paths…" autocomplete="off">
-        <div class="library-context"><span id="fileContext">Project files</span><button id="collapseFolders" class="quiet" title="Collapse folders" aria-label="Collapse folders">⊟</button></div>
-        <div id="fileTree" class="file-tree" aria-label="Project files"></div>
-      </section>
-      <section id="definitionPanel" class="definition-browser" hidden>
-        <div class="section-heading"><span>Current document</span></div>
-        <label class="sr-only" for="definitionSearch">Filter definitions</label>
-        <input id="definitionSearch" type="search" placeholder="Filter definitions…" autocomplete="off">
-        <div id="definitions" class="definition-list"></div>
-      </section>
-      <section class="sidebar-footer"><span class="status-dot"></span><span id="documentVersion">Ready to explore</span><p>Drop files or open a folder.<br>Ctrl+P jumps to any patch.</p></section>
-    </aside>
-    <section class="graph-panel" aria-label="Visual patch">
-      <div class="graph-header">
-        <div><div id="breadcrumbs" class="breadcrumbs"></div><h1 id="scopeTitle">Open a VL patch</h1><div id="scopeSubtitle" class="scope-subtitle">Choose a file to explore its definitions and connections</div></div>
-        <div class="scope-kind" id="scopeKind">VL</div>
+  <nav class="nav"><a href="/" class="wordmark"><span class="mark">vL</span>VL Lens<span class="preview-label">PREVIEW</span></a>
+    <div><a href="#workflow">How it works</a><a href="https://github.com/domjancik/vl-lens">GitHub ↗</a><a href="/viewer" class="button small">Open viewer <span>↗</span></a></div>
+  </nav>
+  <main>
+    <section class="hero">
+      <div class="hero-copy"><p class="eyebrow"><span class="status"></span> A NEW PERSPECTIVE ON VL</p>
+        <h1>See the patch.<br><span>Understand<br>the change.</span></h1>
+        <p class="lead">Your visual code deserves a visual review.<br>Explore saved VL graphs, follow connections, and see what changed between Git snapshots.</p>
+        <div class="hero-actions"><a href="/viewer" class="button primary">Launch the viewer <span>↗</span></a><a href="#download" class="text-link">Get the desktop app ↓</a></div>
+        <p class="fine">Read only. No gamma installation required.</p>
       </div>
-      <div class="toolbar">
-        <label for="operationSelect">Operation</label><select id="operationSelect"><option value="">All operations</option></select>
-        <div class="toolbar-spacer"></div>
-        <label class="check"><input type="checkbox" id="showHidden" checked> Hidden links</label>
-        <label class="check"><input type="checkbox" id="showPins"> Pin labels</label>
-        <button id="fitButton" title="Fit graph (F)">Fit</button>
+      <div class="graph-preview" aria-label="Illustration of a VL graph with a highlighted changed node">
+        <div class="preview-title"><span><span class="mini-dot"></span> Signal.vl</span><span class="snapshot">main <span>→</span> feature</span></div>
+        <div class="preview-toolbar"><span>Signal / Update</span><span class="change-badge">1 CHANGED</span></div>
+        <svg viewBox="0 0 580 410" role="img" aria-label="A signal flows through Multiply and Damper nodes to an output">
+          <defs><pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse"><circle cx="1" cy="1" r="0.7" fill="#354149"/></pattern></defs>
+          <rect width="580" height="410" fill="url(#grid)"/>
+          <g fill="none" stroke-width="2"><path d="M125 115V155H255V182" stroke="#7cbae0"/><path d="M310 220V252H215V278" stroke="#7cbae0"/><path d="M270 316V358H450V145" stroke="#7ee0b8"/><path d="M450 108V65H185V107" stroke="#c6ab6a" stroke-dasharray="5 5"/></g>
+          <g font-family="ui-monospace, monospace" font-size="13">
+            <rect x="74" y="84" width="135" height="31" rx="4" fill="#202d38" stroke="#455765"/><text x="89" y="104" fill="#e4eaed">Signal</text>
+            <rect x="220" y="182" width="137" height="38" rx="4" fill="#243d36" stroke="#7ee0b8"/><text x="237" y="206" fill="#e4eaed">Multiply</text>
+            <rect x="154" y="278" width="144" height="38" rx="4" fill="#202d38" stroke="#455765"/><text x="171" y="302" fill="#e4eaed">Damper</text>
+            <rect x="393" y="108" width="113" height="37" rx="4" fill="#202d38" stroke="#455765"/><text x="410" y="132" fill="#e4eaed">Output</text>
+            <rect x="329" y="231" width="190" height="61" rx="6" fill="#18252c" stroke="#364b52"/><text x="342" y="252" font-size="10" fill="#99b1b8">DEFAULT VALUE</text><text x="342" y="274" fill="#d6a09a" text-decoration="line-through">0.5</text><text x="397" y="274" fill="#7ee0b8">→ 0.8</text>
+          </g><g fill="#9ed7f3"><circle cx="125" cy="115" r="3"/><circle cx="255" cy="182" r="3"/><circle cx="310" cy="220" r="3"/><circle cx="215" cy="278" r="3"/></g>
+        </svg>
+        <div class="preview-bottom"><span>Saved layout. Full context.</span><span><i></i> Added <i></i> Changed <i></i> Removed</span></div>
       </div>
-      <div id="canvas" class="canvas">
-        <div id="welcome" class="welcome"><span class="welcome-symbol">vL</span><h2>Your patches, in view.</h2><p>Browse a project, find a file by its path,<br>or open a folder from your computer.</p><button id="welcomeBrowse" class="primary">Browse project <kbd>Ctrl P</kbd></button><button id="welcomeFolder">Open local folder…</button></div>
-        <svg id="graph" tabindex="0" aria-label="Patch graph. Drag to pan, scroll to zoom. Press F to fit."></svg>
-        <div id="operationNote" class="operation-note" hidden></div>
-        <div id="emptyGraph" class="empty-graph" hidden>No visible graph in this scope.<br>Choose a definition from the browser.</div>
-        <div class="canvas-help">Drag to pan <span>·</span> Scroll to zoom <span>·</span> Double-click a definition to enter</div>
-        <div class="zoom-controls"><button id="zoomOut" aria-label="Zoom out">−</button><span id="zoomLevel">100%</span><button id="zoomIn" aria-label="Zoom in">+</button><button id="downloadSvg" title="Download this graph as SVG" aria-label="Download graph SVG">↓</button></div>
-      </div>
-      <footer class="graph-footer"><span id="graphStats">No file selected</span><div class="legend"><span class="legend-state">State</span><span class="legend-value">Value</span><span class="legend-feedback">Feedback</span></div><button id="findingsButton">Source findings</button></footer>
     </section>
-    <aside class="inspector" aria-label="Element inspector">
-      <div class="inspector-heading"><span class="eyebrow">ELEMENT INSPECTOR</span><button id="clearSelection" class="quiet" title="Inspect the current definition">↖ Scope</button></div>
-      <div class="inspector-tabs"><button data-tab="inspect" aria-pressed="true">Inspect</button><button data-tab="xml" aria-pressed="false">XML</button><button data-tab="csharp" aria-pressed="false">C# export</button><button id="diffTab" data-tab="diff" aria-pressed="false" hidden>Diff</button></div>
-      <div id="inspectorContent" class="inspector-content"></div>
-    </aside>
+    <section class="connect-section" aria-labelledby="connect-title">
+      <div><p class="eyebrow">START WITH A REPOSITORY</p><h2 id="connect-title">From GitHub to graph.</h2><p>Paste a public repository URL. Pick a patch. Follow the connections.</p></div>
+      <form id="landingRepository"><label class="sr-only" for="repository">GitHub repository</label><div class="repository-field"><span>⑂</span><input id="repository" placeholder="github.com/owner/repository" required spellcheck="false" autocomplete="off"><button type="submit">Explore →</button></div><p id="repositoryError" role="alert">Public repositories · no sign-in needed</p></form>
+    </section>
+    <section id="workflow" class="features">
+      <article><span class="feature-number">01 / EXPLORE</span><h3>A familiar canvas.</h3><p>Browse folders, jump to a patch with Ctrl+P, and move through definitions, operations and nested regions.</p></article>
+      <article><span class="feature-number">02 / INSPECT</span><h3>Follow the evidence.</h3><p>Select nodes, pins and wires. Inspect saved values, reference hints and the original XML beside the graph.</p></article>
+      <article><span class="feature-number">03 / COMPARE</span><h3>Review the visual diff.</h3><p>Compare commits, branches or tags. See additions, removals and changed attributes, with an option to ignore layout.</p></article>
+    </section>
+    <section id="download" class="download-section"><div><p class="eyebrow">KEEP IT ON YOUR MACHINE</p><h2>The same lens.<br>Your local workspace.</h2><p>Open local projects and review working-tree changes in a native desktop window. Your local patches stay on your computer.</p><a class="button primary" href="https://github.com/domjancik/vl-lens/releases/latest/download/VL-Lens-Windows-x64.zip">Download for Windows <span>↓</span></a><p class="fine">Portable ZIP · Windows 10/11 x64 · WebView2 required<br>Unsigned preview · Git required for local Git comparisons</p></div><div class="desktop-card"><span class="desktop-title"><i></i><i></i><i></i>VL Lens Desktop</span><span class="desktop-icon">vL</span><strong>A local view.<br>With room to explore.</strong><span>Local folders / Git snapshots / Public GitHub</span></div></section>
+    <section class="scope-note"><b>Made for reading visual code.</b><p>VL Lens renders the structure saved in VL XML. It does not compile or execute patches. Some implicit pins and compiler-resolved types are outside the saved file.</p></section>
   </main>
-  <div id="dropOverlay" hidden><div>Open a patch<span>Drop .vl files to inspect their graph</span></div></div>
-  <dialog id="repositoryDialog" class="repository-dialog">
-    <button class="dialog-close" aria-label="Close dialog">×</button>
-    <span class="eyebrow">GITHUB SNAPSHOTS</span><h2>Open a repository.</h2>
-    <p>Browse VL files in any public GitHub repository. Choose a branch, tag or commit, then compare immutable snapshots.</p>
-    <form id="repositoryForm"><label for="repositoryInput">Repository</label><input id="repositoryInput" placeholder="owner/repository or https://github.com/…" required autocomplete="off" spellcheck="false">
-    <label for="repositoryRef">Branch, tag or commit <span class="muted">optional</span></label><input id="repositoryRef" placeholder="Default branch" spellcheck="false">
-    <p id="repositoryError" role="alert"></p><button class="primary" type="submit">Open repository →</button><button id="localProject" type="button">Return to local files</button></form>
-    <p class="muted">Public repositories only. No GitHub sign-in or token is needed in your browser.</p>
-  </dialog>
-  <dialog id="quickOpen" class="quick-open" aria-label="Find a VL file">
-    <div class="quick-heading"><span id="quickWorkspace">Project</span><button id="closeQuick" aria-label="Close file picker">Esc</button></div>
-    <div class="quick-search"><span>⌕</span><input id="quickSearch" role="combobox" aria-label="Find a VL file" aria-controls="quickResults" aria-expanded="true" aria-autocomplete="list" placeholder="Find a VL file… Name, folder or path" autocomplete="off" spellcheck="false"></div>
-    <div id="quickError" class="quick-error" role="alert" hidden></div>
-    <div class="quick-sources"><button data-quick-source="project" aria-pressed="true">Project</button><button data-quick-source="opened" aria-pressed="false">Opened files</button><button data-quick-source="recent" aria-pressed="false">Recent</button><span id="quickResultCount"></span></div>
-    <div id="quickResults" class="quick-results" role="listbox" aria-label="Matching files"></div>
-    <footer><span>↑ ↓ Navigate <span>↵ Open</span> Esc Close</span><button id="quickFiles">Open files…</button><button id="quickFolder">Open folder…</button></footer>
-  </dialog>
-  <dialog id="aboutDialog"><button class="dialog-close" aria-label="Close dialog">×</button><span class="eyebrow">A DIFFERENT VIEW OF YOUR PATCH</span><h2>Follow the graph.<br>Keep the context.</h2><p>VL Lens reads saved VL XML and draws its nodes, pins, pads, links and nested regions. Use the document browser or drop your own .vl files.</p><div class="about-grid"><div><b>Explore</b><p>Enter definitions, choose operations, inspect defaults and trace hidden or feedback links.</p></div><div><b>Correlate</b><p>See original XML line excerpts and matching attributes or contexts in this repository’s C# export.</p></div></div><p class="notice">This is a structural viewer, not gamma’s compiler or runtime. Node labels and pins are approximated from saved XML. Operation connectivity is not an execution schedule; type and dependency hints are not verified resolutions.</p><p id="privacyNote" class="muted">Opened files are parsed by the viewer server. There are no save, compile or execution actions.</p></dialog>
-  <dialog id="findingsDialog"><button class="dialog-close" aria-label="Close dialog">×</button><h2>Source findings</h2><div id="findingsContent"></div></dialog>
+  <footer><a href="/" class="wordmark"><span class="mark">vL</span>VL Lens</a><span>An independent tool for the VL community.</span><a href="https://github.com/domjancik/vl-lens">Source & documentation ↗</a></footer>
 </body>
 </html>

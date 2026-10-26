@@ -65,6 +65,16 @@ class WebTests(unittest.TestCase):
         self.assertEqual(status, 200)
         self.assertTrue(data['hosted'])
 
+    def test_vercel_entrypoint_exports_a_named_handler_class(self):
+        from api.index import handler
+        self.assertEqual(handler.__name__, 'handler')
+        self.assertTrue(issubclass(handler, HostedHandler))
+
+    def test_static_output_has_a_landing_index_and_distinct_viewer(self):
+        static = Path(__file__).resolve().parents[1] / 'static'
+        self.assertIn('See the patch.', (static/'index.html').read_text(encoding='utf-8'))
+        self.assertIn('id="graph"', (static/'viewer.html').read_text(encoding='utf-8'))
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -19,7 +19,7 @@ Vercel must be signed in to your intended account/team. Deployment links and pro
 
 ### How it runs
 
-`/` rewrites to the landing page and `/viewer` to the workbench. Static JS and CSS are served directly by Vercel. API paths rewrite to the shared Python Function with an explicit route parameter, retaining repository/ref/path query parameters.
+`/` serves the static landing index and `/viewer` rewrites to the workbench. Static JS and CSS are served directly by Vercel. API paths rewrite to the shared Python Function with an explicit route parameter, retaining repository/ref/path query parameters.
 
 The function handles requests independently. Repository selection lives in each request's query, never in a mutable server-wide checkout. Immutable commit IDs travel with files and comparisons. API tokens stay server-side and the browser only contacts its own origin.
 
