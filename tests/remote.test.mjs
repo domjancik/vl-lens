@@ -14,5 +14,8 @@ test('snapshot requests pin files while keeping Git revision inputs independent'
   assert.equal(file.searchParams.get('ref'),connection.snapshot);
   assert.equal(new URL(apiURL('/api/documents',connection),'http://localhost').searchParams.get('ref'),'feature/hello');
   assert.equal(apiURL('/api/parse',connection),'/api/parse');
+  const history=new URL(apiURL('/api/git/history?ref=feature%2Fother&page=2',connection),'http://localhost');
+  assert.equal(history.searchParams.get('ref'),'feature/other');
+  assert.equal(history.searchParams.get('page'),'2');
   assert.equal(viewerURL('person/library','feature/hello'),'/viewer?repo=person%2Flibrary&ref=feature%2Fhello');
 });

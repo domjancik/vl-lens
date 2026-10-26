@@ -192,6 +192,9 @@ class Handler(BaseHTTPRequestHandler):
                 self.send_data({'hits': find_exports(query.get('path', [''])[0], query.get('document', [''])[0], query.get('id', [''])[0])})
             elif parsed.path == '/api/git/revisions':
                 self.send_data(LocalGitRepository(ROOT,project=PROJECT).revisions())
+            elif parsed.path == '/api/git/history':
+                self.send_data(LocalGitRepository(ROOT,project=PROJECT).history(query.get('ref',['HEAD'])[0],
+                    query.get('page',[1])[0],query.get('limit',[50])[0]))
             elif parsed.path == '/api/git/changes':
                 repository = LocalGitRepository(ROOT,project=PROJECT)
                 base = repository.resolve(query.get('base', ['HEAD'])[0])

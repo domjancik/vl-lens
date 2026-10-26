@@ -1,7 +1,8 @@
 import {indexDocument, buildScene, children, referenceOf, choicesOf, isDefinition, labelOf, resolveReference} from './model.mjs';
-import {diffDocuments} from './diff.mjs';
+import {diffDocuments,chooseComparisonFile} from './diff.mjs';
 import {createFileBrowser} from './file-browser.mjs';
 import {apiURL,viewerURL} from './remote.mjs';
+import {createHistoryBrowser} from './history.mjs';
 
 const connectionParams=new URLSearchParams(location.search);
 const connection={repo:connectionParams.get('repo')||'',ref:connectionParams.get('ref')||'',snapshot:''};
@@ -11,6 +12,12 @@ const $ = id => document.getElementById(id);
 const svgNS = 'http://www.w3.org/2000/svg';
 const state = {catalog:[], uploads:[], workspace:{id:'local',name:'Project',gitAvailable:true,exportsAvailable:false}, importBatch:0,model:null, scene:null, scope:'', operation:'', selected:'', tab:'inspect', camera:null, load:0, exportRequest:0, identities:new Map()};
 const git = {enabled:false,side:'after',comparison:null,before:null,after:null,diff:null,changes:[],documents:[],file:null,raw:false,request:0};
+const historyBrowser=createHistoryBrowser({api,
+  getWorkspace:()=>state.workspace,getError:()=>$('errorText').textContent,
+  getRange:()=>({base:git.base?.id||$('gitBase').value,target:git.target?.id||$('gitTarget').value}),
+  ensureGit:async()=>{if(!git.enabled)await setGitMode(true,{deferComparison:true});if(!git.menu)throw Error('Connect a Git repository to browse its history.');},
+  onApply:async(base,target)=>{$('gitBase').value=base;$('gitTarget').value=target;return refreshComparison();}
+});
 const fileBrowser=createFileBrowser({getProject:()=>git.enabled?git.documents:state.catalog,getOpened:()=>state.uploads,
   getWorkspace:()=>state.workspace,getCurrent:()=>state.model,
   getError:()=>$('error').hidden?'':$('errorText').textContent,
@@ -51,6 +58,7 @@ async function refreshProject(){
     const data=await api('/api/documents');state.catalog=data.documents;state.workspace=data.workspace;
     connection.snapshot=data.workspace.revision||'';
     $('gitToggle').disabled=!data.workspace.gitAvailable;$('gitToggle').title=data.workspace.gitAvailable?'Compare Git snapshots':'This project is not a Git checkout';
+    $('gitHistoryButton').disabled=!data.workspace.gitAvailable;
     refreshDocuments();if(git.enabled)await refreshComparison();
   }catch(error){showError(error.message);}
 }
@@ -304,13 +312,14 @@ async function setGitMode(enabled,restore={}) {
   $('gitBar').hidden=!enabled;$('gitFiles').hidden=!enabled;$('diffTab').hidden=!enabled;
   $('gitToggle').setAttribute('aria-pressed',String(enabled));
   if(!enabled){
-    git.comparison=null;git.diff=null;git.before=null;git.after=null;
+    git.comparison=null;git.diff=null;git.before=null;git.after=null;git.base=null;git.target=null;
     if(state.tab==='diff')setTab('inspect');
     if(restore.reload!==false){if(state.catalog.some(d=>d.path===state.model?.path))await loadDocument(state.model.path,state.scope);else{clearDocument();history.replaceState(null,'',location.pathname+location.search);}}
     return;
   }
   try{
     const menu=await api('/api/git/revisions');if(!git.enabled)return;
+    git.menu=menu;
     for(const [id,specials] of [['gitBaseOptions',menu.specialRevisions.filter(r=>r.baseAllowed)],['gitTargetOptions',menu.specialRevisions]]){
       const list=$(id);list.replaceChildren();const seen=new Set();
       const add=(value,label)=>{if(seen.has(value))return;seen.add(value);const option=new Option(label,value);list.append(option);};
@@ -319,7 +328,7 @@ async function setGitMode(enabled,restore={}) {
       for(const commit of menu.commits)add(commit.oid,`${commit.short} · ${commit.subject}`);
     }
     $('gitBase').value=restore.base||menu.defaults.base;$('gitTarget').value=restore.target||menu.defaults.target;
-    setTab('diff');await refreshComparison(restore);
+    setTab('diff');if(!restore.deferComparison)await refreshComparison(restore);
   }catch(error){showError(error.message);$('gitSummary').textContent='Git comparison unavailable';}
 }
 async function refreshComparison(restore={}) {
@@ -331,11 +340,10 @@ async function refreshComparison(restore={}) {
     $('gitResolved').textContent=`${data.base.id.slice(0,8)} → ${data.target.id.slice(0,8)}`;
     renderGitFiles();
     const preferred=restore.file||state.model?.path;
-    const entry=git.changes.find(f=>f.path===preferred||f.oldPath===preferred)||git.changes.find(f=>f.status==='modified')||git.changes[0];
-    const fallback=git.documents.some(d=>d.path===preferred)?preferred:git.documents[0]?.path;
-    if(!entry&&!fallback){clearDocument();$('gitSummary').textContent='No VL documents in these snapshots';return;}
-    await loadComparison(entry?.path||fallback,restore.scope||'',restore.operation||'',entry,restore.side||'after');
-  }catch(error){showError(error.message);}
+    const {path,entry}=chooseComparisonFile(git.changes,git.documents,preferred);
+    if(!path){clearDocument();$('gitSummary').textContent='No VL documents in these snapshots';return true;}
+    return await loadComparison(path,restore.scope||'',restore.operation||'',entry,restore.side||'after');
+  }catch(error){showError(error.message);return false;}
   finally{if(request===git.request)$('gitCompare').disabled=false;}
 }
 function renderGitFiles() {
@@ -505,6 +513,8 @@ $('findingsButton').addEventListener('click',showFindings);
 for(const b of document.querySelectorAll('.dialog-close'))b.addEventListener('click',()=>b.closest('dialog').close());
 for(const b of document.querySelectorAll('[data-tab]'))b.addEventListener('click',()=>setTab(b.dataset.tab));
 $('gitToggle').addEventListener('click',()=>setGitMode(!git.enabled));
+$('gitHistoryButton').addEventListener('click',()=>historyBrowser.open());
+$('gitRangeButton').addEventListener('click',()=>historyBrowser.open());
 $('gitCompare').addEventListener('click',()=>refreshComparison());
 for(const id of ['gitBase','gitTarget'])$(id).addEventListener('keydown',event=>{if(event.key==='Enter')void refreshComparison();});
 $('gitBefore').addEventListener('click',()=>switchSide('before'));

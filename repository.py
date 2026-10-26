@@ -77,6 +77,40 @@ class LocalGitRepository:
                 paths.add(path)
         return sorted(paths)
 
+    def history(self, ref='HEAD', page=1, limit=50):
+        try:
+            page, limit = int(page), int(limit)
+        except (ValueError, TypeError):
+            raise ValueError('Invalid history page size.') from None
+        if not 1 <= page <= 20 or not 1 <= limit <= 100:
+            raise ValueError('History supports pages 1–20 and up to 100 commits per page.')
+        if ref in ('INDEX', 'WORKTREE'):
+            raise ValueError('Choose a commit or branch to browse history.')
+        menu = self.revisions()
+        anchor = menu['head'] if ref == '*' else self.resolve(ref or 'HEAD')['id']
+        revision = ['--all', 'HEAD'] if ref == '*' else [anchor]
+        raw = self._git('log', '--topo-order', '-n', str(limit+1), '--skip='+str((page-1)*limit),
+                        '--format=%H%x00%h%x00%s%x00%cI%x00%P%x00%an%x1e', *revision).decode('utf-8', errors='replace')
+        commits = []
+        for record in raw.split('\x1e'):
+            fields = record.strip('\r\n').split('\0')
+            if len(fields) == 6:
+                commit = dict(zip(('oid', 'short', 'subject', 'date', 'parents', 'author'), fields))
+                commit['parents'] = commit['parents'].split()
+                commits.append(commit)
+        refs = []
+        raw_refs = self._git('for-each-ref', '--count=200',
+                             '--format=%(refname:short)%00%(objectname)%00%(*objectname)%00%(refname)',
+                             'refs/heads', 'refs/remotes', 'refs/tags').decode('utf-8', errors='replace')
+        for line in raw_refs.splitlines():
+            name, oid, peeled, full = line.split('\0')
+            refs.append({'name': name, 'oid': peeled or oid,
+                         'kind': 'tag' if full.startswith('refs/tags/') else 'remote' if full.startswith('refs/remotes/') else 'branch'})
+        return {'provider': 'local-git', 'repository': menu['repository'], 'head': menu['head'],
+                'ref': ref, 'anchor': anchor, 'page': page, 'hasMore': len(commits)>limit,
+                'commits': commits[:limit], 'refs': refs, 'specialRevisions': menu['specialRevisions'],
+                'notice': 'Local refs are read without fetching. All-branch history is refreshed from current local tips.' if ref == '*' else ''}
+
     def changes(self, base='HEAD', target='WORKTREE'):
         before, after = self.resolve(base), self.resolve(target)
         if before['kind'] == 'worktree':

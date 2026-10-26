@@ -36,9 +36,21 @@ class WebTests(unittest.TestCase):
         self.assertEqual(status, 200)
         self.assertEqual(data['documents'], [])
         self.assertFalse(data['workspace']['gitAvailable'])
-        for route in ['/api/document?path=examples/Hello.vl', '/api/git/revisions', '/api/exports']:
+        for route in ['/api/document?path=examples/Hello.vl', '/api/git/revisions', '/api/git/history', '/api/exports']:
             data, status = self.request(route)
             self.assertGreaterEqual(status, 400)
+
+    def test_history_endpoint_preserves_selected_branch_and_page(self):
+        from unittest.mock import patch
+        class Provider:
+            def __init__(self, slug):self.slug=slug
+            def history(self, ref, page, limit):
+                return {'repository':self.slug,'ref':ref,'page':int(page),'commits':[]}
+        with patch('web.GitHubRepository',Provider):
+            data,status=self.request('/api/git/history?repo=person/library&ref=feature%2Fmerge&page=2&limit=50')
+        self.assertEqual(status,200)
+        self.assertEqual(data['ref'],'feature/merge')
+        self.assertEqual(data['page'],2)
 
     def test_hosted_parser_validates_uploads_and_rejects_entities(self):
         data, status = self.request('/api/parse', 'POST', {'path': 'A.vl', 'source': '<Document Id="d"/>'})

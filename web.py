@@ -98,6 +98,8 @@ class WebHandler(server.Handler):
             self.send_data({'hits': []})
         elif route == '/api/git/revisions':
             self.send_data(repository.revisions())
+        elif route == '/api/git/history':
+            self.send_data(repository.history(get('ref'),get('page','1'),get('limit','50')))
         elif route == '/api/git/changes':
             base, target = repository.resolve(get('base')), repository.resolve(get('target'))
             before, after = set(repository.documents(base['id'])), set(repository.documents(target['id']))

@@ -19,6 +19,6 @@ export function apiURL(path,connection){
   const url=new URL(path,'http://localhost');
   url.searchParams.set('repo',connection.repo);
   const ref=url.pathname==='/api/documents'?connection.ref:connection.snapshot||connection.ref;
-  if(ref)url.searchParams.set('ref',ref);
+  if(ref&&!url.pathname.startsWith('/api/git/'))url.searchParams.set('ref',ref);
   return url.pathname+url.search;
 }

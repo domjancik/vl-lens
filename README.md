@@ -43,6 +43,22 @@ Public repositories only. No OAuth or browser token entry is implemented. Even w
 
 The provider reads Git trees and blobs through api.github.com. It compares exact selected snapshots, including divergent branches. Identical moved blobs are reported as renames; edited moves appear as delete/add. The revision menu shows up to 30 commits and 100 branches; other branch names, tags and full commit SHAs can be entered directly. Truncated GitHub trees fail with an explicit message.
 
+## Visual Git history
+
+Open **History** in the header, or **Choose range visually** beside the comparison inputs.
+
+- Browse a colored commit graph with actual parent/merge links, branch and local tag labels, author, date and commit ID.
+- Select **A (Base / Before)** and **B (Target / After)** from commit rows or branch heads, then choose **Compare range**. The current patch stays selected when it exists in the range; changed patches remain in the file list.
+- Click a commit to set the active endpoint. Shift-click sets Base. With a commit focused, arrow keys navigate and **A / B** choose endpoints. Swap reverses a commit comparison.
+- **Review commit** (the arrow on a row) selects its first parent → commit. **Latest commit** selects the newest loaded commit and first parent. Root commits have no parent, so choose two snapshots explicitly.
+- Local Git also offers **Working tree**, **Staged** and **Unstaged** presets. These mutable states appear as endpoint choices, not invented commit nodes.
+- Search loaded commits by subject, author, branch badge or SHA. Filter branch names or open a branch, tag or commit directly.
+- Select a branch and **Load older commits** for pinned history pages, up to 600 commits in the browser. Dashed edges mark unloaded or filtered parents. Counts explicitly describe loaded history.
+
+Local **All branches** reads the currently available local/remote refs without fetching. GitHub **Branch overview** combines up to six branch tips, including the default branch, with 50 commits per tip. The branch list shows the first 100 GitHub branches plus the default branch; open another branch/tag by name when needed. Selecting a branch loads its individual history and enables pagination.
+
+Range shading uses the loaded commit ancestry. It labels forward, reverse, cross-branch and incomplete ancestry separately. Applying a range compares the two exact snapshots, so divergent branches are not silently replaced by their merge base. The graph never claims unloaded ancestors are present.
+
 ## Git diff
 
 **Git diff** compares two saved snapshots using DocumentId and element IDs. Added, removed and changed nodes/pins/links are highlighted. Before/After, Show removals, Ignore Bounds and a unified XML diff support review.
@@ -83,7 +99,7 @@ See [deployment and security details](docs/DEPLOYMENT.md), including API quotas,
 
 ```powershell
 python -m unittest discover -s tests -p "test_*.py"
-node --test tests/model.test.mjs tests/diff.test.mjs tests/files.test.mjs tests/remote.test.mjs
+node --test tests/model.test.mjs tests/diff.test.mjs tests/files.test.mjs tests/remote.test.mjs tests/history.test.mjs tests/comparison-selection.test.mjs
 python tests/check_corpus.py
 # Optional external corpus (read-only; no files copied into this repository):
 python tests/check_corpus.py C:/Projects/MyVLProject

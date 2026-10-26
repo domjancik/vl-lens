@@ -8,6 +8,7 @@
   <link rel="icon" type="image/svg+xml" href="/logo.svg">
   <link rel="stylesheet" href="/style.css">
   <link rel="stylesheet" href="/shared.css">
+  <link rel="stylesheet" href="/history.css">
   <script type="module" src="/app.mjs"></script>
 </head>
 <body>
@@ -18,6 +19,7 @@
       <a href="/" class="home-link" title="VL Lens home">Home</a>
       <button id="connectGitHub">Connect GitHub</button>
       <button id="gitToggle" aria-pressed="false">⑂ Git diff</button>
+      <button id="gitHistoryButton" disabled>⑂ History</button>
       <button id="aboutButton" class="quiet">How it works</button>
       <button id="quickOpenButton" class="primary">Browse files <kbd>Ctrl P</kbd></button>
       <details id="openMenu" class="open-menu"><summary>Open…</summary><div>
@@ -35,6 +37,7 @@
       <label>Target<input id="gitTarget" list="gitTargetOptions" value="WORKTREE" spellcheck="false" aria-label="Target revision"></label>
       <datalist id="gitBaseOptions"></datalist><datalist id="gitTargetOptions"></datalist>
       <button id="gitCompare" class="primary">Compare</button><span id="gitResolved" class="git-resolved"></span>
+      <button id="gitRangeButton">Choose range visually ↗</button>
     </div>
     <div class="git-options"><span id="gitSummary">Choose two snapshots</span><div class="toolbar-spacer"></div>
       <button id="gitBefore" aria-pressed="false">Before</button><button id="gitAfter" aria-pressed="true">After</button>
@@ -95,6 +98,30 @@
     </aside>
   </main>
   <div id="dropOverlay" hidden><div>Open a patch<span>Drop .vl files to inspect their graph</span></div></div>
+  <dialog id="gitHistory" class="history-dialog" aria-labelledby="historyTitle">
+    <header class="history-heading"><div><span class="history-eyebrow">BRANCHES · COMMITS · CHANGE RANGES</span><h2 id="historyTitle">Git history</h2><p id="historyRepo"></p></div><button id="historyClose" aria-label="Close Git history">✕</button></header>
+    <section class="history-range" aria-label="Comparison range">
+      <button id="historyBase" class="history-range-end base" aria-label="Select base snapshot" aria-pressed="true"><span>A · BASE / BEFORE</span><strong>Choose a commit</strong><small>Select from the graph</small></button>
+      <button id="historySwap" class="history-swap" aria-label="Swap base and target" title="Swap base and target">⇄</button>
+      <button id="historyTarget" class="history-range-end target" aria-label="Select target snapshot" aria-pressed="false"><span>B · TARGET / AFTER</span><strong>Choose a commit</strong><small>Select from the graph</small></button>
+      <button id="historyApply" class="primary">Compare range →</button>
+    </section>
+    <div class="history-range-tools"><span id="historyRangeNote">Net changes from A to B</span><button id="historyLatest">Latest commit</button><span id="historyLocalPresets"><button id="historyWorking">Working tree</button><button id="historyStaged">Staged</button><button id="historyUnstaged">Unstaged</button></span></div>
+    <div id="historyError" role="alert" hidden></div>
+    <div class="history-body">
+      <aside class="history-ref-panel" aria-label="Branches and tags">
+        <label class="history-ref-heading" for="historyBranchSearch">BRANCHES & REFS</label><input id="historyBranchSearch" type="search" placeholder="Find a branch…" autocomplete="off">
+        <div id="historyRefs"></div>
+        <form id="historyRefForm"><label for="historyRefInput">Open another branch, tag or SHA</label><div><input id="historyRefInput" placeholder="Branch / tag / commit" autocomplete="off" spellcheck="false"><button type="submit" aria-label="Open Git reference">→</button></div></form>
+      </aside>
+      <section class="history-main" aria-label="Commit graph">
+        <div class="history-toolbar"><strong id="historyBrowseLabel">History</strong><span id="historyCount"></span><label class="sr-only" for="historyCommitSearch">Filter loaded commits</label><input id="historyCommitSearch" type="search" placeholder="Find a commit, author or SHA…" autocomplete="off"></div>
+        <div id="historyScroll" class="history-scroll"><div id="historyRows" class="history-rows"></div><button id="historyMore" class="history-more" hidden>Load older commits</button></div>
+        <p id="historyNotice" class="history-notice" hidden></p>
+      </section>
+    </div>
+    <footer class="history-footer"><span id="historyBoundary">Dashed lines lead to unloaded parents</span><span id="historyStatus" role="status">Read only</span></footer>
+  </dialog>
   <dialog id="repositoryDialog" class="repository-dialog">
     <button class="dialog-close" aria-label="Close dialog">×</button>
     <span class="eyebrow">GITHUB SNAPSHOTS</span><h2>Open a repository.</h2>

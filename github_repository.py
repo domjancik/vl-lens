@@ -174,6 +174,49 @@ class GitHubRepository:
             raise ValueError('The file is not a UTF-8 VL document.') from None
         return {'path': path, 'source': source, 'revision': resolved}
 
+    def history(self, ref='', page=1, limit=50):
+        try:
+            page, limit = int(page), int(limit)
+        except (ValueError, TypeError):
+            raise ValueError('Invalid history page size.') from None
+        if not 1 <= page <= 20 or not 1 <= limit <= 100:
+            raise ValueError('History supports pages 1–20 and up to 100 commits per page.')
+        info = self.info()
+        ref = ref or info['default_branch']
+        if ref != '*' and (ref in ('INDEX','WORKTREE') or not re.fullmatch(r'[\w][\w./@~-]{0,199}', ref)):
+            raise ValueError('Choose a GitHub commit, branch or tag.')
+        branches = self.fetch(self.prefix + '/branches?per_page=100')
+        refs = [{'name': b['name'], 'oid': b['commit']['sha'], 'kind': 'branch'} for b in branches]
+        default = next((r['oid'] for r in refs if r['name']==info['default_branch']), '')
+        if not default:
+            default = self.resolve(info['default_branch'])['id']
+            refs.insert(0,{'name':info['default_branch'],'oid':default,'kind':'branch'})
+        selected = [ref] if ref != '*' else [r['oid'] for r in sorted(refs,key=lambda r:(r['name']!=info['default_branch'],r['name']))[:6]]
+        if ref == '*' and page != 1:
+            raise ValueError('Select a branch to load older commits.')
+        commits = {}
+        more = False
+        for tip in selected:
+            data = self.fetch(self.prefix + '/commits?sha=' + quote(tip, safe='') + '&per_page=' + str(limit) + '&page=' + str(page))
+            more = more or len(data)==limit
+            for item in data:
+                details = item['commit']
+                commits[item['sha']] = {'oid':item['sha'], 'short':item['sha'][:8],
+                    'subject':details['message'].split('\n')[0], 'parents':[p['sha'] for p in item.get('parents',[])],
+                    'author':(details.get('author') or {}).get('name','Unknown'),
+                    'date':(details.get('committer') or {}).get('date','')}
+        values = list(commits.values())
+        notice = ''
+        if ref == '*':
+            notice = 'Branch overview: up to 6 branch tips, '+str(limit)+' commits per tip. Select a branch to load older history.'
+        if len(branches)==100:
+            notice += ' Showing the first 100 branches; enter another branch or tag by name.'
+        return {'provider':'github', 'repository':{'id':self.slug,'name':self.slug}, 'head':default,
+                'defaultBranch':info['default_branch'], 'ref':ref,
+                'anchor':ref if re.fullmatch(r'[a-f0-9]{40,64}',ref) else values[0]['oid'] if values else ref, 'page':page,
+                'hasMore':more and ref!='*', 'commits':values, 'refs':refs,
+                'specialRevisions':[], 'notice':notice.strip()}
+
     def changes(self, base, target):
         before, after = self.tree(base), self.tree(target)
         removed, added = set(before) - set(after), set(after) - set(before)

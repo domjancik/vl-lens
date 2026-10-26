@@ -58,3 +58,10 @@ export function diffDocuments(before,after,{ignoreLayout=false}={}) {
   for(const r of records){summary[r.status]++;if(r.layoutOnly)summary.layout++;}
   return {records,beforeStatus,afterStatus,summary,identityChanged};
 }
+export function chooseComparisonFile(changes,documents,preferred){
+  const selected=changes.find(file=>file.path===preferred||file.oldPath===preferred);
+  if(selected)return {path:selected.path,entry:selected};
+  if(documents.some(file=>file.path===preferred))return {path:preferred,entry:null};
+  const entry=changes.find(file=>file.status==='modified')||changes[0];
+  return {path:entry?.path||documents[0]?.path,entry:entry||null};
+}

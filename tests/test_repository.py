@@ -93,6 +93,28 @@ class RepositoryTests(unittest.TestCase):
         self.assertEqual(menu['commits'][0]['oid'], self.commit)
         self.assertTrue(any(ref['name'] == 'HEAD' for ref in menu['refs']))
 
+    def test_history_keeps_merge_parents_branch_labels_and_pinned_pagination(self):
+        self.assertTrue(hasattr(self.repo, 'history'), 'Visual Git history provider is missing')
+        self.git('branch', '-M', 'main')
+        self.git('checkout', '-qb', 'feature')
+        (self.root/'Feature.vl').write_text('<Document Id="feature"/>')
+        self.git('add', '.'); self.git('commit', '-qm', 'Feature')
+        self.git('checkout', '-q', 'main')
+        (self.root/'Main.vl').write_text('<Document Id="main"/>')
+        self.git('add', '.'); self.git('commit', '-qm', 'Main')
+        self.git('merge', '--no-ff', 'feature', '-m', 'Merge feature')
+        page = self.repo.history('*', limit=2)
+        self.assertEqual(len(page['commits'][0]['parents']), 2)
+        self.assertEqual(page['commits'][0]['author'], 'Viewer test')
+        self.assertTrue(page['hasMore'])
+        self.assertTrue(any(r['name']=='feature' and r['kind']=='branch' for r in page['refs']))
+        older = self.repo.history(page['anchor'], page=2, limit=2)
+        self.assertEqual(len(older['commits']), 2)
+        self.assertEqual(older['commits'][-1]['parents'], [])
+        for value in ['--all', '-1', 'WORKTREE']:
+            with self.subTest(value=value), self.assertRaises(ValueError):
+                self.repo.history(value)
+
     def test_snapshot_document_list_includes_historical_files_and_excludes_deleted_worktree_files(self):
         (self.root / self.path).unlink()
         self.assertEqual(self.repo.documents('HEAD'), [self.path])

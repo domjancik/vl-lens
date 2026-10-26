@@ -47,6 +47,60 @@ class GitHubTests(unittest.TestCase):
             with self.subTest(value=value), self.assertRaises(ValueError):
                 normalize_repository(value)
 
+    def test_public_history_returns_parents_branches_and_bounded_pages(self):
+        self.assertTrue(hasattr(self.repo, 'history'), 'GitHub history provider is missing')
+        from urllib.parse import urlsplit, parse_qs
+        def commit(oid, parents):
+            return {'sha':oid,'parents':[{'sha':p} for p in parents],
+                    'commit':{'message':'A commit','author':{'name':'Author'},
+                              'committer':{'date':'2026-01-01T00:00:00Z'}}}
+        def fetch(path):
+            if path == '/repos/person/library':return self.metadata
+            if '/branches?' in path:return [{'name':'main','commit':{'sha':B}},{'name':'feature','commit':{'sha':A}}]
+            if '/commits?' in path:
+                query=parse_qs(urlsplit(path).query)
+                self.assertLessEqual(int(query['per_page'][0]),100)
+                return [commit(B,[A]),commit(A,[])] if query.get('page',['1'])[0]=='1' else [commit(A,[])]
+            raise AssertionError(path)
+        repo=GitHubRepository('person/library',fetch=fetch)
+        page=repo.history('main',limit=2)
+        self.assertEqual(page['anchor'],B)
+        self.assertEqual(page['commits'][0]['parents'],[A])
+        self.assertEqual(page['commits'][0]['author'],'Author')
+        self.assertTrue(page['hasMore'])
+        self.assertEqual(page['refs'][1]['name'],'feature')
+        older=repo.history(B,page=2,limit=2)
+        self.assertFalse(older['hasMore'])
+        self.assertEqual(older['anchor'],B)
+        with self.assertRaises(ValueError):repo.history('main',page=0)
+
+    def test_history_rejects_private_repository_before_fetching_refs(self):
+        self.metadata['private']=True
+        with self.assertRaisesRegex(ValueError,'public'):
+            self.repo.history()
+        self.assertEqual(self.calls,['/repos/person/library'])
+
+    def test_branch_overview_always_includes_default_branch_beyond_first_page(self):
+        from urllib.parse import urlsplit,parse_qs
+        self.assertTrue(hasattr(self.repo,'history'))
+        selected=[]
+        def fetch(path):
+            if path=='/repos/person/library':return self.metadata
+            if '/branches?' in path:
+                return [{'name':'feature-'+str(i),'commit':{'sha':format(i,'040x')}} for i in range(100)]
+            if path.endswith('/commits/main'):return {'sha':B}
+            if '/commits?' in path:
+                sha=parse_qs(urlsplit(path).query)['sha'][0];selected.append(sha)
+                return [{'sha':sha,'parents':[],'commit':{'message':'Tip','author':{'name':'A'},'committer':{'date':''}}}]
+            raise AssertionError(path)
+        repo=GitHubRepository('person/library',fetch=fetch)
+        overview=repo.history('*')
+        self.assertEqual(overview['head'],B)
+        self.assertTrue(any(r['name']=='main' for r in overview['refs']))
+        self.assertIn(B,selected)
+        self.assertLessEqual(len(selected),6)
+        self.assertIn('100',overview['notice'])
+
     def test_resolves_refs_to_immutable_commits_and_reads_by_blob(self):
         self.assertEqual(self.repo.resolve('old')['id'], A)
         self.assertEqual(self.repo.documents(A), ['Edit.vl', 'Old.vl'])

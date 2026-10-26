@@ -1,19 +1,12 @@
-VL Lens public preview, including production GitHub routing fixes and bundled runtime license notices.
+VL Lens v0.2.0 adds a visual Git history and change-range browser.
 
-- Generic VL file explorer, Ctrl+P search, folder imports and workspace recents.
-- Graph inspection, original XML, operation selection and SVG export.
-- Structural Git diffs for local working trees, index and commit snapshots.
-- Public GitHub repository browsing and exact commit-to-commit comparisons.
-- Landing page and Vercel Python Function deployment.
-- Native Windows x64 desktop window with File > Open project folder.
+- Commit lanes and merge connections with branch/head badges, authors, dates and IDs.
+- Base / Target selection from commits or branch heads, with loaded-range highlighting.
+- Single-commit review, reversed comparisons and local staged/unstaged/working-tree presets.
+- Branch and commit search, pinned pagination and clear unloaded-history boundaries.
+- Local all-ref history and a bounded public GitHub branch overview.
+- Range changes keep the current VL patch selected when it exists in both snapshots.
 
-Download VL-Lens-Windows-x64.zip, extract the whole folder and run VL-Lens.exe.
-No Python or gamma installation is required. Windows 10/11 and WebView2 Runtime
-are required. Git is needed only for local repository comparisons.
-
-This is an unsigned preview. Private GitHub repositories and compiler/runtime
-semantics are not supported. Hosted files have smaller payload limits than desktop.
-
-The packaged application was launched successfully in a native window before
-publication. The source includes automated Python/JavaScript checks and Windows
-release automation. SHA256SUMS.txt provides the release archive checksum.
+Download the Windows ZIP, extract the entire folder and run VL-Lens.exe.
+Windows 10/11 x64 and WebView2 Runtime are required; local Git comparisons also
+require Git. This is an unsigned preview. Public GitHub repositories only.
