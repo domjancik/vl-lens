@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <title>VL Lens</title>
+  <path d="M46 46L58 58" stroke="#8be1bb" stroke-width="6" stroke-linecap="round"/>
+  <circle cx="29" cy="29" r="24" fill="#142b26" stroke="#8be1bb" stroke-width="2.5"/>
+  <circle cx="29" cy="29" r="19.5" stroke="#8be1bb" stroke-opacity=".18"/>
+  <path d="M10 22A20 20 0 0 1 27 9" stroke="#d7f8e9" stroke-opacity=".65" stroke-width="1.3" stroke-linecap="round"/>
+  <path d="M16 20L23 37L30 20M35 20V37H44" stroke="#b7f1d4" stroke-width="3.6" stroke-linecap="square" stroke-linejoin="miter"/>
+</svg>

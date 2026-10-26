@@ -1,1 +1,9 @@
-/* System fonts keep both the hosted and desktop application self-contained. */
+/* Shared vector identity: equal-height uppercase VL inside an optical lens. */
+.vl-logo{display:block;width:100%;height:100%;object-fit:contain}
+.wordmark .mark,.topbar .brand-mark,.welcome .welcome-symbol,.desktop-card .desktop-icon{display:block;flex-shrink:0;background:transparent;border:0;border-radius:0;padding:0;box-shadow:none}
+.wordmark .mark{width:42px;height:42px}
+footer .wordmark .mark{width:32px;height:32px}
+.topbar .brand-mark{width:40px;height:40px}
+.welcome .welcome-symbol{width:88px;height:88px}
+.desktop-card .desktop-icon{width:100px;height:100px}
+@media(max-width:600px){.topbar .brand-mark{width:32px;height:32px}}

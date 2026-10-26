@@ -5,13 +5,14 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="description" content="Explore VL patches, saved graph layouts, operations and generated C# references locally.">
   <title>VL Lens · Patch explorer</title>
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%237ee0b8'/%3E%3Cpath d='M7 10l6 13 5-13m3 0v13h5' fill='none' stroke='%23111d24' stroke-width='2.5'/%3E%3C/svg%3E">
+  <link rel="icon" type="image/svg+xml" href="/logo.svg">
   <link rel="stylesheet" href="/style.css">
+  <link rel="stylesheet" href="/shared.css">
   <script type="module" src="/app.mjs"></script>
 </head>
 <body>
   <header class="topbar">
-    <button class="brand" id="browseToggle" title="Toggle document browser"><span class="brand-mark">vL</span><span>VL Lens<small>PATCH EXPLORER</small></span></button>
+    <button class="brand" id="browseToggle" title="Toggle document browser"><span class="brand-mark"><img class="vl-logo" src="/logo.svg" alt="" width="64" height="64"></span><span>VL Lens<small>PATCH EXPLORER</small></span></button>
     <span class="local-badge" id="modeBadge">READ ONLY</span>
     <div class="top-actions">
       <a href="/" class="home-link" title="VL Lens home">Home</a>
@@ -78,7 +79,7 @@
         <button id="fitButton" title="Fit graph (F)">Fit</button>
       </div>
       <div id="canvas" class="canvas">
-        <div id="welcome" class="welcome"><span class="welcome-symbol">vL</span><h2>Your patches, in view.</h2><p>Browse a project, find a file by its path,<br>or open a folder from your computer.</p><button id="welcomeBrowse" class="primary">Browse project <kbd>Ctrl P</kbd></button><button id="welcomeFolder">Open local folder…</button></div>
+        <div id="welcome" class="welcome"><span class="welcome-symbol"><img class="vl-logo" src="/logo.svg" alt="" width="64" height="64"></span><h2>Your patches, in view.</h2><p>Browse a project, find a file by its path,<br>or open a folder from your computer.</p><button id="welcomeBrowse" class="primary">Browse project <kbd>Ctrl P</kbd></button><button id="welcomeFolder">Open local folder…</button></div>
         <svg id="graph" tabindex="0" aria-label="Patch graph. Drag to pan, scroll to zoom. Press F to fit."></svg>
         <div id="operationNote" class="operation-note" hidden></div>
         <div id="emptyGraph" class="empty-graph" hidden>No visible graph in this scope.<br>Choose a definition from the browser.</div>
