@@ -10,6 +10,7 @@
   <link rel="stylesheet" href="/shared.css">
   <link rel="stylesheet" href="/history.css">
   <link rel="stylesheet" href="/file-diff.css">
+  <link rel="stylesheet" href="/guidance.css">
   <script type="module" src="/app.mjs"></script>
 </head>
 <body>
@@ -21,7 +22,7 @@
       <button id="connectGitHub">Connect GitHub</button>
       <button id="gitToggle" aria-pressed="false">⑂ Git diff</button>
       <button id="gitHistoryButton" disabled>⑂ History</button>
-      <button id="aboutButton" class="quiet">How it works</button>
+      <details id="helpMenu" class="open-menu"><summary>Help</summary><div><button id="tourButton">Quick tour</button><button id="rangeTourButton">How to choose a diff range</button><button id="aboutButton">How it works</button></div></details>
       <button id="quickOpenButton" class="primary">Browse files <kbd>Ctrl P</kbd></button>
       <details id="openMenu" class="open-menu"><summary>Open…</summary><div>
         <button id="uploadButton">Open files…</button><button id="folderButton">Open folder…</button><button id="refreshProject">Refresh project</button>
@@ -101,7 +102,7 @@
   </main>
   <div id="dropOverlay" hidden><div>Open a patch<span>Drop .vl files to inspect their graph</span></div></div>
   <dialog id="gitHistory" class="history-dialog" aria-labelledby="historyTitle">
-    <header class="history-heading"><div><span class="history-eyebrow">BRANCHES · COMMITS · CHANGE RANGES</span><h2 id="historyTitle">Git history</h2><p id="historyRepo"></p></div><button id="historyClose" aria-label="Close Git history">✕</button></header>
+    <header class="history-heading"><div><span class="history-eyebrow">BRANCHES · COMMITS · CHANGE RANGES</span><h2 id="historyTitle">Git history</h2><p id="historyRepo"></p></div><div class="history-heading-actions"><button id="historyGuideButton">Range guide</button><button id="historyClose" aria-label="Close Git history">✕</button></div></header>
     <section class="history-range" aria-label="Comparison range">
       <button id="historyBase" class="history-range-end base" aria-label="Select base snapshot" aria-pressed="true"><span>A · BASE / BEFORE</span><strong>Choose a commit</strong><small>Select from the graph</small></button>
       <button id="historySwap" class="history-swap" aria-label="Swap base and target" title="Swap base and target">⇄</button>

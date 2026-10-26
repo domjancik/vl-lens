@@ -1,0 +1,20 @@
+.guide-target{outline:2px solid #89dfb6!important;outline-offset:4px!important}
+.guide-card{position:fixed;z-index:10000;width:350px;box-sizing:border-box;background:#192f36;border:1px solid #83b69f;border-radius:9px;padding:17px 18px 14px;box-shadow:0 14px 50px #0009;color:#deede8;font-family:Inter,"Segoe UI",sans-serif;overflow:auto}
+.guide-card:focus{outline:none}
+.guide-card-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;color:#8fd5b1;font:9px ui-monospace,monospace;letter-spacing:1px}
+.guide-card .guide-close{border:0;background:none;padding:0 2px;color:#a2c6bf;font-size:20px;line-height:1}
+.guide-card h3{font-size:17px;letter-spacing:-.3px;font-weight:550;margin:14px 0 9px}
+.guide-card p{font-size:12px;line-height:1.8;color:#abc3ca;margin:0 0 18px}
+.guide-card-actions{display:flex;align-items:center;gap:7px}
+.guide-card button{cursor:pointer;border:1px solid #46636d;background:#203d47;color:#c5dfdf;border-radius:5px;padding:7px 10px;font:11px "Segoe UI",sans-serif}
+.guide-card button:focus-visible{outline:2px solid #c4f4d7;outline-offset:3px}
+.guide-card button:disabled{opacity:.4;cursor:default}
+.guide-card .guide-skip{border-color:transparent;background:none;color:#8cabb6;margin-right:auto;padding-left:0}
+.guide-card .guide-next{background:#8be1bb;color:#183529;border-color:#8be1bb;font-weight:600}
+.guide-card .guide-open-history{display:block;width:100%;margin:0 0 15px;text-align:left;color:#a9e4c3;background:#23473b;border-color:#55846b}
+#helpMenu>div{width:235px}#helpMenu button{white-space:normal;line-height:1.5}
+.topbar #helpMenu #aboutButton{display:block}
+.history-heading-actions{display:flex;gap:12px;align-items:flex-start}
+.history-heading-actions #historyGuideButton{font-size:11px;background:#203b42;color:#a9d5c1;border-color:#4b6e65;padding:7px 10px}
+.history-heading-actions #historyClose{background:none;border-color:transparent;font-size:16px}
+@media(max-width:600px){.guide-card{padding:14px}.guide-card h3{font-size:16px}.guide-card p{font-size:11px}.history-heading-actions{gap:3px}.history-heading-actions #historyGuideButton{font-size:10px;padding:6px}.history-heading h2{font-size:18px}}

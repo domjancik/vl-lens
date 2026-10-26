@@ -1,11 +1,10 @@
-VL Lens v0.3.0 adds mixed-file Git diffs.
+VL Lens v0.3.1 adds first-use guidance.
 
-- All Git-listed file types appear in changed files and Git snapshot browsing.
-- Text diffs have line numbers, colored hunks, Before/After views and line wrapping.
-- Binary files show sizes and content identities for both snapshots.
-- HTML/SVG stay inert text; symlinks are not followed; submodule pointers retain metadata.
-- Added, deleted and renamed files remain navigable alongside visual VL diffs.
+- A short viewer tour points out repository connection, file browsing, canvas and Git history.
+- A separate range guide explains branches, A / Before, B / After and Compare range.
+- Replay either guide from Help or use Range guide in the history window.
+- Skip, Back, Next and Escape controls keep guidance optional.
+- Guidance preferences persist in the browser and across desktop loopback ports.
 
-Extract the Windows ZIP and run VL-Lens.exe. Windows 10/11 x64 and WebView2
-Runtime are required. Git is required for local repository comparisons.
-Unsigned preview; public GitHub repositories only.
+Windows 10/11 x64 and WebView2 Runtime are required. Git is required for local
+repository comparisons. Unsigned preview; public GitHub repositories only.

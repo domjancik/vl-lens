@@ -4,6 +4,7 @@ import {createFileBrowser} from './file-browser.mjs';
 import {apiURL,viewerURL} from './remote.mjs';
 import {createHistoryBrowser} from './history.mjs';
 import {renderFileDiff} from './file-diff.mjs';
+import {createGuidance} from './guidance.mjs';
 
 const connectionParams=new URLSearchParams(location.search);
 const connection={repo:connectionParams.get('repo')||'',ref:connectionParams.get('ref')||'',snapshot:''};
@@ -13,6 +14,7 @@ const $ = id => document.getElementById(id);
 const svgNS = 'http://www.w3.org/2000/svg';
 const state = {catalog:[], uploads:[], workspace:{id:'local',name:'Project',gitAvailable:true,exportsAvailable:false}, importBatch:0,model:null, scene:null, scope:'', operation:'', selected:'', tab:'inspect', camera:null, load:0, exportRequest:0, identities:new Map()};
 const git = {enabled:false,side:'after',comparison:null,before:null,after:null,diff:null,changes:[],documents:[],file:null,raw:false,request:0};
+const guidance=createGuidance();
 const historyBrowser=createHistoryBrowser({api,
   getWorkspace:()=>state.workspace,getError:()=>$('errorText').textContent,
   getRange:()=>({base:git.base?.id||$('gitBase').value,target:git.target?.id||$('gitTarget').value}),
@@ -617,3 +619,4 @@ $('repositoryForm').addEventListener('submit',event=>{
   catch(error){$('repositoryError').textContent=error.message;}
 });
 $('localProject').addEventListener('click',()=>location.assign('/viewer'));
+guidance.offer();

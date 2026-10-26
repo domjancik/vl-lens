@@ -19,6 +19,12 @@ python run.py --root C:/Projects/MyVLProject --exports C:/Projects/MyVLProject/E
 
 The server binds only to loopback. Project reads are confined to VL files inside the selected root. Hidden directories, dependencies and build folders are excluded. Symlink escapes and traversal paths are rejected. The app does not save or modify VL files or repositories.
 
+## First-use guidance
+
+A short, skippable tour introduces repository connection, file browsing, the canvas and Git history. When history first opens, a separate guide highlights branch browsing, **A / Before**, **B / After** and **Compare range**.
+
+Replay through **Help → Quick tour**, **Help → How to choose a diff range**, or **Range guide** inside history. Dismissal is remembered in this browser. The desktop app also stores non-sensitive guidance flags in loopback cookies so they survive its changing local port. Storage failures fall back to page-local memory. The tours do not select commits or apply ranges for you.
+
 ## Explore
 
 - **Ctrl+P / Cmd+P** opens quick file selection with filename/path search, keyboard navigation, and workspace-specific recents.
@@ -111,7 +117,7 @@ See [deployment and security details](docs/DEPLOYMENT.md), including API quotas,
 
 ```powershell
 python -m unittest discover -s tests -p "test_*.py"
-node --test tests/model.test.mjs tests/diff.test.mjs tests/files.test.mjs tests/remote.test.mjs tests/history.test.mjs tests/comparison-selection.test.mjs
+node --test tests/model.test.mjs tests/diff.test.mjs tests/files.test.mjs tests/remote.test.mjs tests/history.test.mjs tests/comparison-selection.test.mjs tests/guidance.test.mjs
 python tests/check_corpus.py
 # Optional external corpus (read-only; no files copied into this repository):
 python tests/check_corpus.py C:/Projects/MyVLProject

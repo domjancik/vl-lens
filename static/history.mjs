@@ -152,6 +152,7 @@ export function createHistoryBrowser({api,ensureGit,getRange,onApply,getError,ge
       if(!dialog.open)return;
       ({base,target}=getRange());active='base';
       await load(['INDEX','WORKTREE'].includes(target)?'HEAD':target||'HEAD');
+      if(data&&dialog.open)dialog.dispatchEvent(new CustomEvent('historyready'));
     }catch(failure){error(failure.message);}
   }
   $('historyClose').addEventListener('click',()=>dialog.close());
