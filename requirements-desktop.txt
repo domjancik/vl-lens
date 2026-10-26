@@ -1,2 +1,16 @@
-pywebview==6.2.1
+# Windows x64 / Python 3.12 desktop build dependencies.
+altgraph==0.17.5
+bottle==0.13.4
+cffi==2.1.1
+clr_loader==0.3.1
+packaging==26.3
+pefile==2024.8.26
+proxy_tools==0.1.0
+pycparser==3.12
 pyinstaller==6.22.3
+pyinstaller-hooks-contrib==2026.9
+pythonnet==3.2.1
+pywebview==6.2.1
+pywin32-ctypes==0.2.3
+setuptools==84.2.1
+typing_extensions==4.16.0

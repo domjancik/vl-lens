@@ -1,4 +1,4 @@
-First public preview of VL Lens.
+VL Lens public preview, including production GitHub routing fixes and bundled runtime license notices.
 
 - Generic VL file explorer, Ctrl+P search, folder imports and workspace recents.
 - Graph inspection, original XML, operation selection and SVG export.

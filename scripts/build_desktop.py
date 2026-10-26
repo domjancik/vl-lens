@@ -1,6 +1,7 @@
 """Build a portable Windows distribution; run in the desktop dependency venv."""
 from pathlib import Path
 import os
+from importlib.metadata import distribution, PackageNotFoundError
 import shutil
 import subprocess
 import sys
@@ -22,6 +23,21 @@ def main():
                     str(ROOT / 'desktop.py')], cwd=ROOT, check=True)
     shutil.copy2(ROOT / 'LICENSE', ROOT / 'dist/VL-Lens/LICENSE.txt')
     shutil.copy2(ROOT / 'docs/DESKTOP.md', ROOT / 'dist/VL-Lens/README.txt')
+    notices = ROOT / 'dist/VL-Lens/THIRD_PARTY_LICENSES'
+    notices.mkdir(exist_ok=True)
+    shutil.copy2(Path(sys.base_prefix) / 'LICENSE.txt', notices / 'PYTHON.txt')
+    for name in ('pywebview', 'pythonnet', 'clr_loader', 'cffi', 'pycparser', 'bottle', 'proxy_tools', 'typing_extensions', 'setuptools'):
+        try:
+            package = distribution(name)
+        except PackageNotFoundError:
+            continue
+        destination = notices / name
+        destination.mkdir(exist_ok=True)
+        for file in package.files or ():
+            if any(word in str(file).lower() for word in ('license', 'copying', 'notice', 'authors')) or file.name == 'METADATA':
+                source = package.locate_file(file)
+                if source.is_file():
+                    shutil.copy2(source, destination / file.name)
     archive = shutil.make_archive(str(ROOT / 'dist/VL-Lens-Windows-x64'), 'zip', ROOT / 'dist', 'VL-Lens')
     print(archive)
 

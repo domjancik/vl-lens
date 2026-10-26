@@ -2,7 +2,7 @@
 
 A read-only VL patch explorer with a web viewer, public GitHub browsing, structural Git diffs and a native Windows desktop app.
 
-[Open in Vercel](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fdomjancik%2Fvl-lens) · [Download Windows app](https://github.com/domjancik/vl-lens/releases/latest/download/VL-Lens-Windows-x64.zip) · [Deployment guide](docs/DEPLOYMENT.md)
+[Live site](https://vl-lens.vercel.app) · [Open in Vercel](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fdomjancik%2Fvl-lens) · [Download Windows app](https://github.com/domjancik/vl-lens/releases/latest/download/VL-Lens-Windows-x64.zip) · [Deployment guide](docs/DEPLOYMENT.md)
 
 ## Run locally
 

@@ -1,5 +1,6 @@
 import io
 import json
+import re
 from pathlib import Path
 import sys
 import unittest
@@ -74,6 +75,12 @@ class WebTests(unittest.TestCase):
         static = Path(__file__).resolve().parents[1] / 'static'
         self.assertIn('See the patch.', (static/'index.html').read_text(encoding='utf-8'))
         self.assertIn('id="graph"', (static/'viewer.html').read_text(encoding='utf-8'))
+
+    def test_vercel_route_captures_do_not_shadow_document_parameters(self):
+        config = json.loads((Path(__file__).resolve().parents[1]/'vercel.json').read_text())
+        api_route = next(r for r in config['rewrites'] if r['source'].startswith('/api/'))
+        captures = set(re.findall(r':(\w+)', api_route['source']))
+        self.assertFalse(captures & {'path', 'repo', 'ref', 'base', 'target', 'oldPath', 'newPath'})
 
 
 if __name__ == '__main__':

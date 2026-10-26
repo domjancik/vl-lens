@@ -19,8 +19,8 @@
       "destination": "/viewer.html"
     },
     {
-      "source": "/api/:path*",
-      "destination": "/api/index.py?_route=/api/:path*"
+      "source": "/api/:endpoint*",
+      "destination": "/api/index.py?_route=/api/:endpoint*"
     }
   ],
   "headers": [
